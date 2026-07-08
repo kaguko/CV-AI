@@ -36,27 +36,85 @@ const API_SECRET = process.env.API_SECRET || '';
 
 // ─── Gemini AI ───
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODEL = 'gemini-1.5-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
 
 async function analyzeWithGemini(cvText, jobLabel) {
-  if (!GEMINI_API_KEY) return null;
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-  const prompt = `Bạn là chuyên gia tuyển dụng. Hãy đọc nội dung CV sau và đánh giá mức độ phù hợp với vị trí "${jobLabel}" trên thang 0-100. Trả về JSON: {"score": <số>, "summary": "<nhận xét ngắn>"}
+  if (!GEMINI_API_KEY) {
+    console.error('[Gemini] Missing GEMINI_API_KEY');
+    return null;
+  }
+
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+  const prompt = `Bạn là chuyên gia tuyển dụng. Hãy đọc nội dung CV sau và đánh giá mức độ phù hợp với vị trí "${jobLabel}" trên thang 0-100. Trả về JSON hợp lệ duy nhất theo format:
+{"score": <so tu 0 den 100>, "summary": "<nhan xet ngan gon>"}
 
 CV:
-${cvText.slice(0, 3000)}`;
+${String(cvText || '').slice(0, 6000)}`;
+
   try {
     const res = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': GEMINI_API_KEY
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [{ text: prompt }]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.2,
+          responseMimeType: 'application/json'
+        }
+      })
     });
-    if (!res.ok) return null;
-    const data = await res.json();
+
+    const rawText = await res.text();
+
+    if (!res.ok) {
+      console.error('[Gemini] HTTP error:', res.status, rawText);
+      return null;
+    }
+
+    let data;
+    try {
+      data = JSON.parse(rawText);
+    } catch (parseErr) {
+      console.error('[Gemini] Response JSON parse error:', parseErr.message, rawText);
+      return null;
+    }
+
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const match = text.match(/\{[\s\S]*\}/);
-    return match ? JSON.parse(match[0]) : null;
-  } catch {
+
+    if (!text) {
+      console.error('[Gemini] Empty candidate text:', JSON.stringify(data));
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(text);
+      return {
+        score: parsed.score,
+        summary: parsed.summary
+      };
+    } catch (parseErr) {
+      const match = text.match(/\{[\s\S]*\}/);
+      if (!match) {
+        console.error('[Gemini] No JSON object found in model text:', text);
+        return null;
+      }
+
+      try {
+        return JSON.parse(match[0]);
+      } catch (fallbackErr) {
+        console.error('[Gemini] Fallback JSON parse error:', fallbackErr.message, text);
+        return null;
+      }
+    }
+  } catch (error) {
+    console.error('[Gemini] Network/runtime error:', error);
     return null;
   }
 }
