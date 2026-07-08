@@ -10,158 +10,32 @@
     }
     return 'http://localhost:3000';
   })();
-  const JOBS = {
-    marketing: {
-      label: 'Marketing Manager',
-      score: 78,
-      description: 'CV của bạn khá phù hợp với vị trí Marketing Manager. Nên bổ sung thêm kỹ năng digital marketing và các chỉ số đo lường hiệu quả.',
-      recommendations: [
-        'Bổ sung chứng chỉ Google Ads và Facebook Blueprint',
-        'Thêm kinh nghiệm quản lý chiến dịch quảng cáo',
-        'Nhấn mạnh kỹ năng phân tích dữ liệu (Google Analytics)',
-        'Cải thiện phần mô tả thành tích bằng số liệu cụ thể'
-      ],
-      skills: [
-        ['Content Marketing', 85, false],
-        ['SEO/SEM', 60, false],
-        ['Data Analytics', 40, true],
-        ['Team Leadership', 75, false],
-        ['Digital Ads', 30, true]
-      ],
-      roadmap: [
-        ['Tháng 1-2', 'Nền tảng', [
-          'Học Google Ads Certification',
-          'Hoàn thành khóa Facebook Blueprint',
-          'Đọc 5 case study marketing'
-        ]],
-        ['Tháng 3-4', 'Thực hành', [
-          'Chạy 2 chiến dịch quảng cáo thử',
-          'Thực tập tại agency/startup',
-          'Xây portfolio digital marketing'
-        ]],
-        ['Tháng 5-6', 'Nâng cao', [
-          'Học Google Analytics nâng cao',
-          'Quản lý chiến dịch thực tế',
-          'Cập nhật CV với thành tích mới'
-        ]]
-      ]
-    },
-    finance: {
-      label: 'Financial Analyst',
-      score: 82,
-      description: 'CV của bạn phù hợp với vị trí phân tích tài chính. Hãy làm nổi bật khả năng Excel, báo cáo và tư duy số liệu.',
-      recommendations: [
-        'Nêu rõ kỹ năng Excel/Power BI',
-        'Thêm kinh nghiệm phân tích báo cáo tài chính',
-        'Bổ sung chứng chỉ CFA/FRM nếu có',
-        'Nhấn mạnh khả năng làm việc với dữ liệu lớn'
-      ],
-      skills: [
-        ['Excel Modeling', 88, false],
-        ['Financial Analysis', 76, false],
-        ['Power BI', 58, false],
-        ['Reporting', 83, false],
-        ['Risk Assessment', 51, true]
-      ],
-      roadmap: [
-        ['Tháng 1-2', 'Nền tảng', ['Ôn Excel nâng cao', 'Học chuẩn báo cáo tài chính', 'Làm quen Power BI']],
-        ['Tháng 3-4', 'Thực hành', ['Phân tích case study doanh nghiệp', 'Làm dự án mô phỏng', 'Thực tập phòng tài chính']],
-        ['Tháng 5-6', 'Nâng cao', ['Chuẩn bị CFA Level 1', 'Tối ưu CV theo KPI', 'Xây portfolio phân tích']] 
-      ]
-    },
-    technology: {
-      label: 'Software Engineer',
-      score: 86,
-      description: 'CV của bạn có nền tảng kỹ thuật tốt. Nên làm rõ dự án thực tế, công nghệ đã dùng và đóng góp đo được.',
-      recommendations: [
-        'Thêm link GitHub/portfolio',
-        'Nêu rõ stack công nghệ và vai trò trong dự án',
-        'Bổ sung kinh nghiệm làm việc nhóm với Agile/Scrum',
-        'Mô tả kết quả bằng số liệu: tốc độ, quy mô, người dùng'
-      ],
-      skills: [
-        ['JavaScript', 84, false],
-        ['React', 81, false],
-        ['API Design', 72, false],
-        ['Testing', 57, false],
-        ['System Design', 49, true]
-      ],
-      roadmap: [
-        ['Tháng 1-2', 'Nền tảng', ['Ôn cấu trúc dữ liệu', 'Luyện JavaScript/TypeScript', 'Xây 1 project nhỏ']],
-        ['Tháng 3-4', 'Thực hành', ['Làm 2 dự án thực tế', 'Đóng góp GitHub', 'Thực tập frontend/backend']],
-        ['Tháng 5-6', 'Nâng cao', ['Tối ưu portfolio', 'Ôn system design', 'Chuẩn bị phỏng vấn kỹ thuật']]
-      ]
-    },
-    humanresources: {
-      label: 'HR Specialist',
-      score: 74,
-      description: 'CV khá phù hợp với lĩnh vực nhân sự. Cần thể hiện thêm kỹ năng tuyển dụng, phỏng vấn và quản lý quan hệ nội bộ.',
-      recommendations: [
-        'Nêu kinh nghiệm tuyển dụng/phỏng vấn',
-        'Bổ sung kỹ năng giao tiếp và xử lý xung đột',
-        'Đưa số liệu về số lượng vị trí đã hỗ trợ',
-        'Thêm kinh nghiệm dùng hệ thống HRM nếu có'
-      ],
-      skills: [
-        ['Recruitment', 71, false],
-        ['Communication', 88, false],
-        ['Employee Relations', 65, false],
-        ['Interviewing', 60, false],
-        ['HRM Tools', 44, true]
-      ],
-      roadmap: [
-        ['Tháng 1-2', 'Nền tảng', ['Học quy trình tuyển dụng', 'Ôn luật lao động cơ bản', 'Rèn giao tiếp']],
-        ['Tháng 3-4', 'Thực hành', ['Tham gia phỏng vấn thử', 'Thực tập phòng nhân sự', 'Làm báo cáo tuyển dụng']],
-        ['Tháng 5-6', 'Nâng cao', ['Tối ưu CV HR', 'Làm case nội bộ', 'Xây kế hoạch nhân sự mẫu']]
-      ]
-    },
-    accounting: {
-      label: 'Accountant',
-      score: 79,
-      description: 'CV phù hợp với vị trí kế toán. Hãy nhấn mạnh tính chính xác, kinh nghiệm đối chiếu sổ sách và phần mềm kế toán.',
-      recommendations: [
-        'Nêu rõ kinh nghiệm đối chiếu số liệu',
-        'Bổ sung phần mềm kế toán đã dùng',
-        'Thêm thành tích về giảm sai sót/chậm trễ',
-        'Làm nổi bật khả năng làm việc với số liệu lớn'
-      ],
-      skills: [
-        ['Accounting Basics', 86, false],
-        ['Excel', 82, false],
-        ['Bookkeeping', 77, false],
-        ['Audit Support', 55, false],
-        ['Tax Reporting', 48, true]
-      ],
-      roadmap: [
-        ['Tháng 1-2', 'Nền tảng', ['Ôn chuẩn mực kế toán', 'Học Excel nâng cao', 'Làm quen phần mềm kế toán']],
-        ['Tháng 3-4', 'Thực hành', ['Làm bài tập sổ sách', 'Thực tập kế toán', 'Báo cáo thử']],
-        ['Tháng 5-6', 'Nâng cao', ['Chuẩn hóa CV', 'Ôn thuế cơ bản', 'Xây case thực hành']]
-      ]
-    },
-    logistics: {
-      label: 'Logistics Coordinator',
-      score: 76,
-      description: 'CV phù hợp với logistics. Nên làm rõ kinh nghiệm quy trình, quản lý đơn hàng và phối hợp chuỗi cung ứng.',
-      recommendations: [
-        'Bổ sung kinh nghiệm về vận hành đơn hàng',
-        'Nêu rõ kỹ năng làm việc với nhà cung cấp',
-        'Đưa số liệu cải thiện thời gian giao nhận',
-        'Thêm kỹ năng ERP/warehouse nếu có'
-      ],
-      skills: [
-        ['Supply Chain', 79, false],
-        ['Operations', 73, false],
-        ['Vendor Coordination', 66, false],
-        ['Planning', 62, false],
-        ['ERP Tools', 46, true]
-      ],
-      roadmap: [
-        ['Tháng 1-2', 'Nền tảng', ['Học quy trình supply chain', 'Ôn quản lý kho', 'Tìm hiểu ERP']],
-        ['Tháng 3-4', 'Thực hành', ['Thực tập vận hành', 'Làm case logistics', 'Quản lý đơn hàng thử']],
-        ['Tháng 5-6', 'Nâng cao', ['Hoàn thiện portfolio', 'Ôn kỹ năng đàm phán', 'Cập nhật CV thực tế']]
-      ]
-    }
+
+  // Cache JOBS sau khi fetch từ server — không hardcode nữa
+  let JOBS_CACHE = null;
+
+  // Fallback tối thiểu nếu server không trả lời
+  const JOBS_FALLBACK = {
+    marketing:      { label: 'Marketing Manager',     score: 78 },
+    finance:        { label: 'Financial Analyst',      score: 82 },
+    technology:     { label: 'Software Engineer',      score: 86 },
+    humanresources: { label: 'HR Specialist',          score: 74 },
+    accounting:     { label: 'Accountant',             score: 79 },
+    logistics:      { label: 'Logistics Coordinator',  score: 76 }
   };
+
+  async function fetchJobs() {
+    if (JOBS_CACHE) return JOBS_CACHE;
+    try {
+      const res = await fetch(`${API_BASE}/api/jobs`);
+      if (!res.ok) throw new Error('jobs fetch failed');
+      JOBS_CACHE = await res.json();
+      return JOBS_CACHE;
+    } catch {
+      JOBS_CACHE = JOBS_FALLBACK;
+      return JOBS_CACHE;
+    }
+  }
 
   function getDefaultState() {
     return {
@@ -243,29 +117,31 @@
     return nextState;
   }
 
-  function getJobConfig(key) {
-    return JOBS[key] || JOBS.marketing;
+  async function getJobConfig(key, jobs) {
+    const map = jobs || await fetchJobs();
+    return map[key] || map['marketing'] || Object.values(map)[0];
   }
 
   function getCurrentJobKey() {
-    const state = loadState();
-    return state.selectedJobKey || 'marketing';
+    return loadState().selectedJobKey || 'marketing';
   }
 
   function formatDate(date) {
     return new Intl.DateTimeFormat('vi-VN').format(date);
   }
 
-  function initHome() {
+  async function initHome() {
     const state = loadState();
-    const job = getJobConfig(state.selectedJobKey);
+    const jobs = await fetchJobs();
+    const job = await getJobConfig(state.selectedJobKey, jobs);
     const homeJob = document.querySelector('.job-select');
     if (homeJob) {
       homeJob.textContent = job.label;
     }
   }
 
-  function initJobsPage() {
+  async function initJobsPage() {
+    const jobs = await fetchJobs();
     const search = document.getElementById('job-search');
     const jobCards = Array.from(document.querySelectorAll('[data-job-key]'));
     const continueButton = document.getElementById('jobs-continue');
@@ -319,9 +195,10 @@
     }
   }
 
-  function initUploadPage() {
+  async function initUploadPage() {
     const state = loadState();
-    const job = getJobConfig(state.selectedJobKey);
+    const jobs = await fetchJobs();
+    const job = await getJobConfig(state.selectedJobKey, jobs);
     const selectedJobNode = document.getElementById('selected-job-name');
     const fileLabelNode = document.getElementById('selected-file-name');
     const chooseFileButton = document.getElementById('choose-file-btn');
@@ -329,9 +206,7 @@
     const nextButton = document.getElementById('upload-next');
     const messageNode = document.getElementById('upload-message');
 
-    if (selectedJobNode) {
-      selectedJobNode.textContent = job.label;
-    }
+    if (selectedJobNode) selectedJobNode.textContent = job.label;
     if (fileLabelNode) {
       fileLabelNode.textContent = state.selectedFileName ? `Tệp đã chọn: ${state.selectedFileName}` : 'Chưa chọn file CV';
     }
@@ -356,29 +231,25 @@
         event.preventDefault();
         const currentState = loadState();
         if (!currentState.selectedFileName) {
-          if (messageNode) {
-            messageNode.textContent = 'Hãy chọn file CV trước khi phân tích.';
-          }
+          if (messageNode) messageNode.textContent = 'Hãy chọn file CV trước khi phân tích.';
           return;
         }
         setState({ startedAnalysisAt: Date.now() });
         try {
           window.sessionStorage.setItem('careerai-run-analysis', '1');
         } catch {
-          // Ignore session storage failures and fall back to the page state.
+          // ignore
         }
         window.location.href = 'analysis.html';
       });
     }
   }
 
-  function initAnalysisPage() {
+  async function initAnalysisPage() {
     let shouldRun = false;
     try {
       shouldRun = window.sessionStorage.getItem('careerai-run-analysis') === '1';
-      if (shouldRun) {
-        window.sessionStorage.removeItem('careerai-run-analysis');
-      }
+      if (shouldRun) window.sessionStorage.removeItem('careerai-run-analysis');
     } catch {
       shouldRun = false;
     }
@@ -387,25 +258,16 @@
       const subtitleNode = document.querySelector('.section-sub');
       const ring = document.querySelector('.percent-ring');
       const nextButton = document.querySelector('.next-btn');
-
-      if (titleNode) {
-        titleNode.textContent = 'Bước phân tích đang chờ CV';
-      }
-      if (subtitleNode) {
-        subtitleNode.textContent = 'Hãy quay lại bước tải CV để bắt đầu phân tích.';
-      }
-      if (ring) {
-        ring.textContent = '0%';
-      }
-      if (nextButton) {
-        nextButton.textContent = 'Quay lại tải CV →';
-        nextButton.setAttribute('href', 'upload.html');
-      }
+      if (titleNode) titleNode.textContent = 'Bước phân tích đang chờ CV';
+      if (subtitleNode) subtitleNode.textContent = 'Hãy quay lại bước tải CV để bắt đầu phân tích.';
+      if (ring) ring.textContent = '0%';
+      if (nextButton) { nextButton.textContent = 'Quay lại tải CV →'; nextButton.setAttribute('href', 'upload.html'); }
       return;
     }
 
     const state = loadState();
-    const job = getJobConfig(state.selectedJobKey);
+    const jobs = await fetchJobs();
+    const job = await getJobConfig(state.selectedJobKey, jobs);
     const ring = document.querySelector('.percent-ring');
     const list = document.querySelector('.analysis-list');
     const startValue = 67;
@@ -423,12 +285,8 @@
 
     const timer = window.setInterval(() => {
       current += 6;
-      if (current > endValue) {
-        current = endValue;
-      }
-      if (ring) {
-        ring.textContent = `${current}%`;
-      }
+      if (current > endValue) current = endValue;
+      if (ring) ring.textContent = `${current}%`;
       if (current === endValue) {
         window.clearInterval(timer);
         analyzeOnServer(state)
@@ -440,9 +298,7 @@
                 history: result.history || []
               });
             }
-            window.setTimeout(() => {
-              window.location.replace('result.html');
-            }, 650);
+            window.setTimeout(() => window.location.replace('result.html'), 650);
           })
           .catch(() => {
             const fallbackResult = {
@@ -451,21 +307,17 @@
               jobLabel: job.label,
               fileName: state.selectedFileName
             };
-            setState({
-              analysisFinishedAt: Date.now(),
-              lastResult: fallbackResult
-            });
-            window.setTimeout(() => {
-              window.location.replace('result.html');
-            }, 650);
+            setState({ analysisFinishedAt: Date.now(), lastResult: fallbackResult });
+            window.setTimeout(() => window.location.replace('result.html'), 650);
           });
       }
     }, 180);
   }
 
-  function initResultPage() {
+  async function initResultPage() {
     const state = loadState();
-    const job = getJobConfig(state.selectedJobKey);
+    const jobs = await fetchJobs();
+    const job = await getJobConfig(state.selectedJobKey, jobs);
     const result = state.lastResult || { score: job.score, jobLabel: job.label };
     const jobLabelNode = document.querySelector('.result-sub');
     const scoreNode = document.querySelector('.score-big .accent');
@@ -474,81 +326,72 @@
     const skillRows = Array.from(document.querySelectorAll('.skills-card .skill-row'));
     const nextLinks = document.querySelectorAll('.next-card .action');
 
-    if (jobLabelNode) {
-      jobLabelNode.textContent = `Nghề nghiệp: ${result.jobLabel}`;
-    }
-    if (scoreNode) {
-      scoreNode.textContent = String(result.score);
-    }
+    if (jobLabelNode) jobLabelNode.textContent = `Nghề nghiệp: ${result.jobLabel}`;
+    if (scoreNode) scoreNode.textContent = String(result.score);
     if (descriptionNode) {
-      descriptionNode.innerHTML = `${job.description}<br>Tệp CV: ${state.selectedFileName || 'Chưa có tệp'}`;
+      // Hiển thị tóm tắt Gemini nếu có, ngược lại dùng mô tả mặc định
+      const desc = (result.aiSummary) ? result.aiSummary : (job.description || '');
+      descriptionNode.innerHTML = `${desc}<br>Tệp CV: ${state.selectedFileName || 'Chưa có tệp'}`;
     }
-    if (recommendationList) {
+    if (recommendationList && job.recommendations) {
       recommendationList.innerHTML = job.recommendations.map((item) => `<li>✅ ${item}</li>`).join('');
       const warning = document.createElement('li');
       warning.className = 'warn';
       warning.textContent = '⚠️ Chỉnh sửa CV theo mô tả công việc để tăng mức độ phù hợp';
       recommendationList.appendChild(warning);
     }
-    if (skillRows.length) {
+    if (skillRows.length && job.skills) {
       job.skills.forEach((skill, index) => {
         const row = skillRows[index];
         if (!row) return;
         const label = row.querySelector('span');
         const bar = row.querySelector('.fill');
-        if (label) {
-          label.textContent = skill[0];
-        }
-        if (bar) {
-          bar.style.width = `${skill[1]}%`;
-          bar.classList.toggle('orange', Boolean(skill[2]));
-        }
+        if (label) label.textContent = skill[0];
+        if (bar) { bar.style.width = `${skill[1]}%`; bar.classList.toggle('orange', Boolean(skill[2])); }
       });
     }
     if (nextLinks && nextLinks[0]) {
       nextLinks[0].textContent = 'Xem lộ trình chi tiết';
-      nextLinks[1].textContent = 'Tới dashboard';
-      nextLinks[2].textContent = 'Phân tích lại với CV khác';
+      if (nextLinks[1]) nextLinks[1].textContent = 'Tới dashboard';
+      if (nextLinks[2]) nextLinks[2].textContent = 'Phân tích lại với CV khác';
     }
   }
 
-  function initRoadmapPage() {
-    if (!document.getElementById('roadmap')) {
-      return;
-    }
+  async function initRoadmapPage() {
+    if (!document.getElementById('roadmap')) return;
     const state = loadState();
-    const job = getJobConfig(state.selectedJobKey);
+    const jobs = await fetchJobs();
+    const job = await getJobConfig(state.selectedJobKey, jobs);
     const titleNode = document.querySelector('.roadmap-title');
     const subtitleNode = document.querySelector('.section-sub');
     const cards = Array.from(document.querySelectorAll('.road-card'));
     const overallNode = document.querySelector('.overall p');
 
-    if (titleNode) {
-      titleNode.textContent = 'Lộ trình phát triển nghề nghiệp';
+    if (titleNode) titleNode.textContent = 'Lộ trình phát triển nghề nghiệp';
+    if (subtitleNode) subtitleNode.textContent = `Kế hoạch 6 tháng để đạt mục tiêu ${job.label}`;
+    if (job.roadmap) {
+      cards.forEach((card, index) => {
+        const section = job.roadmap[index];
+        if (!section) return;
+        const tag = card.querySelector('.tag');
+        const heading = card.querySelector('h3');
+        const list = card.querySelector('.road-list');
+        if (tag) tag.textContent = section[0];
+        if (heading) heading.textContent = section[1];
+        if (list) {
+          list.innerHTML = section[2].map((item, itemIndex) =>
+            `<li><span class="sq ${index === 0 || itemIndex === 0 ? 'orange' : ''}"></span>${item}</li>`
+          ).join('');
+        }
+      });
     }
-    if (subtitleNode) {
-      subtitleNode.textContent = `Kế hoạch 6 tháng để đạt mục tiêu ${job.label}`;
-    }
-    cards.forEach((card, index) => {
-      const section = job.roadmap[index];
-      if (!section) return;
-      const tag = card.querySelector('.tag');
-      const heading = card.querySelector('h3');
-      const list = card.querySelector('.road-list');
-      if (tag) tag.textContent = section[0];
-      if (heading) heading.textContent = section[1];
-      if (list) {
-        list.innerHTML = section[2].map((item, itemIndex) => `<li><span class="sq ${index === 0 || itemIndex === 0 ? 'orange' : ''}"></span>${item}</li>`).join('');
-      }
-    });
-    if (overallNode) {
-      overallNode.textContent = `${Math.round(job.score / 3)}% hoàn thành`;
-    }
+    if (overallNode) overallNode.textContent = `${Math.round(job.score / 3)}% hoàn thành`;
   }
 
-  function initDashboardPage() {
+  async function initDashboardPage() {
     const state = loadState();
-    const job = getJobConfig(state.selectedJobKey);
+    const jobs = await fetchJobs();
+    const job = await getJobConfig(state.selectedJobKey, jobs);
     const kpis = Array.from(document.querySelectorAll('.kpi'));
     const tbody = document.querySelector('.history tbody');
     const quickLinks = document.querySelectorAll('.quick .quick-btn');
@@ -557,12 +400,8 @@
       const analyzedCount = Math.max(1, state.history.length + (state.lastResult ? 1 : 0));
       kpis[0].querySelector('strong').textContent = String(analyzedCount);
     }
-    if (kpis[1]) {
-      kpis[1].querySelector('strong .o').textContent = String(job.score);
-    }
-    if (kpis[2]) {
-      kpis[2].querySelector('strong').textContent = job.label.split(' ')[0];
-    }
+    if (kpis[1]) kpis[1].querySelector('strong .o').textContent = String(job.score);
+    if (kpis[2]) kpis[2].querySelector('strong').textContent = job.label.split(' ')[0];
     if (kpis[3]) {
       const completion = Math.min(100, Math.max(33, Math.round((state.history.length + 1) * 18)));
       kpis[3].querySelector('strong').textContent = `${completion}%`;
@@ -575,7 +414,9 @@
     ];
 
     if (tbody) {
-      tbody.innerHTML = rows.length ? rows.map((row) => `<tr><td>${row.position}</td><td class="score">${row.score}</td><td>${row.date}</td></tr>`).join('') : '<tr><td colspan="3">Chưa có lịch sử phân tích</td></tr>';
+      tbody.innerHTML = rows.length
+        ? rows.map((row) => `<tr><td>${row.position}</td><td class="score">${row.score}</td><td>${row.date}</td></tr>`).join('')
+        : '<tr><td colspan="3">Chưa có lịch sử phân tích</td></tr>';
     }
 
     if (quickLinks[0]) quickLinks[0].textContent = 'Phân tích CV mới';
@@ -626,6 +467,7 @@
 
   document.addEventListener('DOMContentLoaded', async () => {
     await hydrateStateFromServer();
+    await fetchJobs(); // Pre-load jobs vào cache
     initHome();
     initJobsPage();
     initUploadPage();
