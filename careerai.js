@@ -41,6 +41,7 @@
     return {
       selectedJobKey: 'marketing',
       selectedFileName: '',
+      cvText: '',
       history: [],
       messages: []
     };
@@ -105,7 +106,8 @@
       method: 'POST',
       body: JSON.stringify({
         selectedJobKey: state.selectedJobKey,
-        selectedFileName: state.selectedFileName
+        selectedFileName: state.selectedFileName,
+        cvText: state.cvText || ''
       })
     });
   }
@@ -128,6 +130,16 @@
 
   function formatDate(date) {
     return new Intl.DateTimeFormat('vi-VN').format(date);
+  }
+
+  function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+      if (!file) { resolve(''); return; }
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('Không đọc được file CV'));
+      reader.readAsText(file);
+    });
   }
 
   async function initHome() {
@@ -211,30 +223,52 @@
       fileLabelNode.textContent = state.selectedFileName ? `Tệp đã chọn: ${state.selectedFileName}` : 'Chưa chọn file CV';
     }
 
-    function updateFileName(file) {
-      const nextState = setState({ selectedFileName: file ? file.name : '' });
-      if (fileLabelNode) {
-        fileLabelNode.textContent = nextState.selectedFileName ? `Tệp đã chọn: ${nextState.selectedFileName}` : 'Chưa chọn file CV';
+    async function updateFile(file) {
+      if (!file) {
+        setState({ selectedFileName: '', cvText: '' });
+        if (fileLabelNode) fileLabelNode.textContent = 'Chưa chọn file CV';
+        if (messageNode) messageNode.textContent = 'Vui lòng chọn file CV để tiếp tục.';
+        return;
       }
-      if (messageNode) {
-        messageNode.textContent = nextState.selectedFileName ? 'CV đã sẵn sàng để phân tích.' : 'Vui lòng chọn file CV để tiếp tục.';
+      if (messageNode) messageNode.textContent = 'Đang đọc nội dung CV...';
+      try {
+        const cvText = await readFileAsText(file);
+        const nextState = setState({
+          selectedFileName: file.name,
+          cvText: cvText.trim()
+        });
+        if (fileLabelNode) fileLabelNode.textContent = `Tệp đã chọn: ${file.name}`;
+        if (messageNode) {
+          messageNode.textContent = nextState.cvText
+            ? 'CV đã sẵn sàng để phân tích.'
+            : 'Không đọc được nội dung CV. Hệ thống sẽ chạy mô phỏng.';
+        }
+      } catch {
+        setState({ selectedFileName: file.name, cvText: '' });
+        if (fileLabelNode) fileLabelNode.textContent = `Tệp đã chọn: ${file.name}`;
+        if (messageNode) messageNode.textContent = 'Không đọc được nội dung file. Vẫn có thể chạy mô phỏng.';
       }
     }
 
     if (chooseFileButton && fileInput) {
       chooseFileButton.addEventListener('click', () => fileInput.click());
-      fileInput.addEventListener('change', () => updateFileName(fileInput.files && fileInput.files[0]));
+      fileInput.addEventListener('change', async () => {
+        const file = fileInput.files && fileInput.files[0];
+        await updateFile(file);
+      });
     }
 
     if (nextButton) {
-      nextButton.addEventListener('click', (event) => {
+      nextButton.addEventListener('click', async (event) => {
         event.preventDefault();
         const currentState = loadState();
         if (!currentState.selectedFileName) {
           if (messageNode) messageNode.textContent = 'Hãy chọn file CV trước khi phân tích.';
           return;
         }
-        setState({ startedAnalysisAt: Date.now() });
+        nextButton.style.pointerEvents = 'none';
+        nextButton.style.opacity = '0.6';
+        setState({ startedAnalysisAt: Date.now(), analysisLocked: true });
         try {
           window.sessionStorage.setItem('careerai-run-analysis', '1');
         } catch {
@@ -253,16 +287,24 @@
     } catch {
       shouldRun = false;
     }
+
+    const nextButton = document.querySelector('.next-btn');
+
     if (!shouldRun) {
       const titleNode = document.querySelector('.analysis-title');
       const subtitleNode = document.querySelector('.section-sub');
       const ring = document.querySelector('.percent-ring');
-      const nextButton = document.querySelector('.next-btn');
       if (titleNode) titleNode.textContent = 'Bước phân tích đang chờ CV';
       if (subtitleNode) subtitleNode.textContent = 'Hãy quay lại bước tải CV để bắt đầu phân tích.';
       if (ring) ring.textContent = '0%';
       if (nextButton) { nextButton.textContent = 'Quay lại tải CV →'; nextButton.setAttribute('href', 'upload.html'); }
       return;
+    }
+
+    // Khoá nút khi đang chạy phân tích
+    if (nextButton) {
+      nextButton.style.pointerEvents = 'none';
+      nextButton.style.opacity = '0.6';
     }
 
     const state = loadState();
@@ -295,7 +337,8 @@
               setState({
                 analysisFinishedAt: result.analysisFinishedAt || Date.now(),
                 lastResult: result.lastResult,
-                history: result.history || []
+                history: result.history || [],
+                analysisLocked: false
               });
             }
             window.setTimeout(() => window.location.replace('result.html'), 650);
@@ -305,9 +348,10 @@
               jobKey: state.selectedJobKey,
               score: job.score,
               jobLabel: job.label,
-              fileName: state.selectedFileName
+              fileName: state.selectedFileName,
+              simulated: true
             };
-            setState({ analysisFinishedAt: Date.now(), lastResult: fallbackResult });
+            setState({ analysisFinishedAt: Date.now(), lastResult: fallbackResult, analysisLocked: false });
             window.setTimeout(() => window.location.replace('result.html'), 650);
           });
       }
@@ -318,7 +362,7 @@
     const state = loadState();
     const jobs = await fetchJobs();
     const job = await getJobConfig(state.selectedJobKey, jobs);
-    const result = state.lastResult || { score: job.score, jobLabel: job.label };
+    const result = state.lastResult || { score: job.score, jobLabel: job.label, simulated: true };
     const jobLabelNode = document.querySelector('.result-sub');
     const scoreNode = document.querySelector('.score-big .accent');
     const descriptionNode = document.querySelector('.score-desc');
@@ -329,9 +373,11 @@
     if (jobLabelNode) jobLabelNode.textContent = `Nghề nghiệp: ${result.jobLabel}`;
     if (scoreNode) scoreNode.textContent = String(result.score);
     if (descriptionNode) {
-      // Hiển thị tóm tắt Gemini nếu có, ngược lại dùng mô tả mặc định
       const desc = (result.aiSummary) ? result.aiSummary : (job.description || '');
-      descriptionNode.innerHTML = `${desc}<br>Tệp CV: ${state.selectedFileName || 'Chưa có tệp'}`;
+      const badge = result.simulated
+        ? '<div class="sim-badge">⚠️ Mô phỏng: chưa có Gemini AI key</div>'
+        : '';
+      descriptionNode.innerHTML = `${badge}${desc}<br>Tệp CV: ${state.selectedFileName || 'Chưa có tệp'}`;
     }
     if (recommendationList && job.recommendations) {
       recommendationList.innerHTML = job.recommendations.map((item) => `<li>✅ ${item}</li>`).join('');
@@ -419,10 +465,10 @@
         : '<tr><td colspan="3">Chưa có lịch sử phân tích</td></tr>';
     }
 
-    if (quickLinks[0]) quickLinks[0].textContent = 'Phân tích CV mới';
-    if (quickLinks[1]) quickLinks[1].textContent = 'Xem lộ trình';
-    if (quickLinks[2]) quickLinks[2].textContent = 'Tải CV mẫu';
-    if (quickLinks[3]) quickLinks[3].textContent = 'Đổi nghề nghiệp';
+    if (quickLinks[0]) { quickLinks[0].textContent = 'Phân tích CV mới'; quickLinks[0].setAttribute('href', 'upload.html'); }
+    if (quickLinks[1]) { quickLinks[1].textContent = 'Xem lộ trình'; quickLinks[1].setAttribute('href', 'roadmap.html'); }
+    if (quickLinks[2]) { quickLinks[2].textContent = 'Tải CV mẫu'; quickLinks[2].setAttribute('href', 'sample-cv.pdf'); quickLinks[2].setAttribute('download', 'sample-cv.pdf'); }
+    if (quickLinks[3]) { quickLinks[3].textContent = 'Đổi nghề nghiệp'; quickLinks[3].setAttribute('href', 'jobs.html'); }
   }
 
   function initContactPage() {

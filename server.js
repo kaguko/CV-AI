@@ -224,15 +224,26 @@ async function analyzeState(statePatch) {
   const analysisFinishedAt = Date.now();
   let score = job.score;
   let aiSummary = null;
+  let simulated = true;
+
   const cvText = statePatch.cvText || '';
   if (cvText && GEMINI_API_KEY) {
     const aiResult = await analyzeWithGemini(cvText, job.label);
     if (aiResult) {
       score = Math.min(100, Math.max(0, Number(aiResult.score) || job.score));
       aiSummary = aiResult.summary || null;
+      simulated = false;
     }
   }
-  const lastResult = { jobKey: selectedJobKey, score, jobLabel: job.label, fileName: statePatch.selectedFileName || state.selectedFileName || '', aiSummary };
+
+  const lastResult = {
+    jobKey: selectedJobKey,
+    score,
+    jobLabel: job.label,
+    fileName: statePatch.selectedFileName || state.selectedFileName || '',
+    aiSummary,
+    simulated
+  };
   const historyEntry = { position: job.label, score: `${score}/100`, date: new Intl.DateTimeFormat('vi-VN').format(new Date(analysisFinishedAt)) };
   const nextState = normalizeState({ ...state, ...statePatch, selectedJobKey, analysisFinishedAt, lastResult, history: [historyEntry, ...state.history].slice(0, 10) });
   saveState(nextState);
@@ -289,6 +300,6 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`CareerAI server running at http://localhost:${PORT}`);
-  console.log(`Gemini AI: ${GEMINI_API_KEY ? 'Đã bật ✅' : 'Chưa có key (set GEMINI_API_KEY trong .env)'}`);
+  console.log(`Gemini AI: ${GEMINI_API_KEY ? 'Đã bật ✅' : 'Chưa có key — điểm mô phỏng (set GEMINI_API_KEY trong .env)'}`);
   console.log(`API auth:  ${API_SECRET ? 'Đã bật ✅' : 'Tắt (set API_SECRET trong .env để bật)'}`);
 });
