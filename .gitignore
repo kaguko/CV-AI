@@ -1,0 +1,23 @@
+# ─── Bảo mật — KHAI BÁO ĐẦY ĐỦ ĐỂ KHAI BÁO CÁC FILE NHẠY CẢM ───
+# File chứa API key và mật khẩu — tuyệt đối không push lên Git
+.env
+.env.local
+.env.production
+.env.*.local
+
+# ─── Dữ liệu runtime ───
+# File này tự động sinh ra khi chạy server, không cần track
+careerai-data.json
+
+# ─── Node.js ───
+node_modules/
+npm-debug.log*
+
+# ─── Hệ điệu hành ───
+.DS_Store
+Thumbs.db
+
+# ─── Editor ───
+.vscode/
+.idea/
+*.swp

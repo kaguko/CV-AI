@@ -3,33 +3,48 @@ const fs = require('fs');
 const path = require('path');
 const { URL } = require('url');
 
+// ─── Load biến môi trường từ file .env nếu có ───
+function loadEnv() {
+  const envPath = path.join(__dirname, '.env');
+  try {
+    const lines = fs.readFileSync(envPath, 'utf8').split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const eqIndex = trimmed.indexOf('=');
+      if (eqIndex === -1) continue;
+      const key = trimmed.slice(0, eqIndex).trim();
+      const value = trimmed.slice(eqIndex + 1).trim();
+      if (key && !(key in process.env)) {
+        process.env[key] = value;
+      }
+    }
+  } catch {
+    // Không có .env — dùng biến môi trường hệ thống (cho Render/Vercel)
+  }
+}
+loadEnv();
+
 const PORT = Number(process.env.PORT || 3000);
 const ROOT_DIR = __dirname;
 const DATA_FILE = path.join(ROOT_DIR, 'careerai-data.json');
 const JOBS_FILE = path.join(ROOT_DIR, 'jobs-data.json');
 
-// ─── Cấu hình bảo mật ────────────────────────────────────────────────────────
-// Thế ALLOWED_ORIGIN bằng domain thật khi deploy production
+// ─── Cấu hình bảo mật (lấy từ .env hoặc biến hệ thống) ───
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'http://localhost:3000';
-// API key đơn giản — đặt biến môi trường API_SECRET khi chạy server
-// Ví dụ: API_SECRET=mysecret node server.js
 const API_SECRET = process.env.API_SECRET || '';
 
-// ─── Gemini AI ────────────────────────────────────────────────────────────────
-// Đặt biến môi trường GEMINI_API_KEY=<key của bạn> rồi chạy lại server
+// ─── Gemini AI ───
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GEMINI_MODEL = 'gemini-1.5-flash';
 
 async function analyzeWithGemini(cvText, jobLabel) {
-  if (!GEMINI_API_KEY) {
-    return null; // Fallback sang dữ liệu cố định nếu chưa có key
-  }
+  if (!GEMINI_API_KEY) return null;
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
   const prompt = `Bạn là chuyên gia tuyển dụng. Hãy đọc nội dung CV sau và đánh giá mức độ phù hợp với vị trí "${jobLabel}" trên thang 0-100. Trả về JSON: {"score": <số>, "summary": "<nhận xét ngắn>"}
 
 CV:
 ${cvText.slice(0, 3000)}`;
-
   try {
     const res = await fetch(endpoint, {
       method: 'POST',
@@ -46,19 +61,18 @@ ${cvText.slice(0, 3000)}`;
   }
 }
 
-// ─── Load JOBS từ file JSON dùng chung ──────────────────────────────────────
+// ─── Load JOBS từ file JSON dùng chung ───
 function loadJobs() {
   try {
     return JSON.parse(fs.readFileSync(JOBS_FILE, 'utf8'));
   } catch {
-    // Fallback tối thiểu nếu file bị mất
     return {
-      marketing: { label: 'Marketing Manager', score: 78 },
-      finance: { label: 'Financial Analyst', score: 82 },
-      technology: { label: 'Software Engineer', score: 86 },
-      humanresources: { label: 'HR Specialist', score: 74 },
-      accounting: { label: 'Accountant', score: 79 },
-      logistics: { label: 'Logistics Coordinator', score: 76 }
+      marketing:      { label: 'Marketing Manager',    score: 78 },
+      finance:        { label: 'Financial Analyst',     score: 82 },
+      technology:     { label: 'Software Engineer',     score: 86 },
+      humanresources: { label: 'HR Specialist',         score: 74 },
+      accounting:     { label: 'Accountant',            score: 79 },
+      logistics:      { label: 'Logistics Coordinator', score: 76 }
     };
   }
 }
@@ -78,8 +92,7 @@ function getDefaultState() {
 }
 
 function isValidJobKey(key) {
-  const JOBS = loadJobs();
-  return Object.prototype.hasOwnProperty.call(JOBS, key);
+  return Object.prototype.hasOwnProperty.call(loadJobs(), key);
 }
 
 function isValidCvFileName(fileName) {
@@ -99,10 +112,7 @@ function normalizeState(state) {
       }
     : null;
   return {
-    ...safeState,
-    selectedJobKey,
-    selectedFileName,
-    lastResult,
+    ...safeState, selectedJobKey, selectedFileName, lastResult,
     history: Array.isArray(safeState.history) ? safeState.history : [],
     messages: Array.isArray(safeState.messages) ? safeState.messages : []
   };
@@ -123,16 +133,13 @@ function loadState() {
   return loadedState;
 }
 
-function saveState(state) {
-  writeJson(DATA_FILE, normalizeState(state));
-}
+function saveState(state) { writeJson(DATA_FILE, normalizeState(state)); }
 
 function getJob(key) {
   const JOBS = loadJobs();
   return JOBS[key] || JOBS.marketing;
 }
 
-// ─── CORS headers ─────────────────────────────────────────────────────────────
 function getCorsHeaders() {
   return {
     'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
@@ -184,11 +191,9 @@ function parseBody(req) {
   });
 }
 
-// ─── Kiểm tra API key (chỉ áp dụng khi API_SECRET được đặt) ───────────────────
 function isAuthorized(req) {
-  if (!API_SECRET) return true; // Bỏ qua nếu chưa cấu hình secret
-  const key = req.headers['x-api-key'];
-  return key === API_SECRET;
+  if (!API_SECRET) return true;
+  return req.headers['x-api-key'] === API_SECRET;
 }
 
 function ensureDataFile() {
@@ -199,11 +204,9 @@ function serveStatic(req, res, pathname) {
   const requestedPath = pathname === '/' ? '/index.html' : pathname;
   const filePath = path.normalize(path.join(ROOT_DIR, requestedPath));
   if (!filePath.startsWith(ROOT_DIR)) { sendText(res, 403, 'Forbidden', 'text/plain'); return; }
-
   fs.readFile(filePath, (error, data) => {
     if (error) {
-      const fallbackPath = path.join(ROOT_DIR, 'index.html');
-      fs.readFile(fallbackPath, (fallbackError, fallbackData) => {
+      fs.readFile(path.join(ROOT_DIR, 'index.html'), (fallbackError, fallbackData) => {
         if (fallbackError) { sendText(res, 404, 'Not Found', 'text/plain'); return; }
         sendText(res, 200, fallbackData.toString('utf8'), 'text/html');
       });
@@ -216,12 +219,9 @@ function serveStatic(req, res, pathname) {
 
 async function analyzeState(statePatch) {
   const state = loadState();
-  const JOBS = loadJobs();
   const selectedJobKey = statePatch.selectedJobKey || state.selectedJobKey || 'marketing';
   const job = getJob(selectedJobKey);
   const analysisFinishedAt = Date.now();
-
-  // Cố gắng dùng Gemini nếu có key
   let score = job.score;
   let aiSummary = null;
   const cvText = statePatch.cvText || '';
@@ -232,39 +232,19 @@ async function analyzeState(statePatch) {
       aiSummary = aiResult.summary || null;
     }
   }
-
-  const lastResult = {
-    jobKey: selectedJobKey,
-    score,
-    jobLabel: job.label,
-    fileName: statePatch.selectedFileName || state.selectedFileName || '',
-    aiSummary
-  };
-  const historyEntry = {
-    position: job.label,
-    score: `${score}/100`,
-    date: new Intl.DateTimeFormat('vi-VN').format(new Date(analysisFinishedAt))
-  };
-  const nextState = normalizeState({
-    ...state, ...statePatch, selectedJobKey, analysisFinishedAt, lastResult,
-    history: [historyEntry, ...state.history].slice(0, 10)
-  });
+  const lastResult = { jobKey: selectedJobKey, score, jobLabel: job.label, fileName: statePatch.selectedFileName || state.selectedFileName || '', aiSummary };
+  const historyEntry = { position: job.label, score: `${score}/100`, date: new Intl.DateTimeFormat('vi-VN').format(new Date(analysisFinishedAt)) };
+  const nextState = normalizeState({ ...state, ...statePatch, selectedJobKey, analysisFinishedAt, lastResult, history: [historyEntry, ...state.history].slice(0, 10) });
   saveState(nextState);
   return nextState;
 }
 
 async function handleApi(req, res, pathname) {
-  // Kiểm tra auth cho các endpoint ghi dữ liệu
-  const writeMethods = ['POST', 'PUT', 'PATCH'];
-  if (writeMethods.includes(req.method) && !isAuthorized(req)) {
+  if (['POST', 'PUT', 'PATCH'].includes(req.method) && !isAuthorized(req)) {
     sendJson(res, 401, { error: 'Unauthorized. Provide X-API-Key header.' });
     return true;
   }
-
-  if (pathname === '/api/state' && req.method === 'GET') {
-    sendJson(res, 200, loadState());
-    return true;
-  }
+  if (pathname === '/api/state' && req.method === 'GET') { sendJson(res, 200, loadState()); return true; }
   if (pathname === '/api/state' && (req.method === 'PUT' || req.method === 'PATCH')) {
     const patch = await parseBody(req);
     const nextState = normalizeState({ ...loadState(), ...patch });
@@ -275,26 +255,17 @@ async function handleApi(req, res, pathname) {
   if (pathname === '/api/messages' && req.method === 'POST') {
     const message = await parseBody(req);
     const state = loadState();
-    const nextState = { ...state, messages: [...state.messages, message].slice(0, 100) };
-    saveState(nextState);
+    saveState({ ...state, messages: [...state.messages, message].slice(0, 100) });
     sendJson(res, 200, { ok: true, message });
     return true;
   }
   if (pathname === '/api/analyze' && req.method === 'POST') {
     const patch = await parseBody(req);
     const nextState = await analyzeState(patch);
-    sendJson(res, 200, {
-      ok: true,
-      lastResult: nextState.lastResult,
-      analysisFinishedAt: nextState.analysisFinishedAt,
-      history: nextState.history
-    });
+    sendJson(res, 200, { ok: true, lastResult: nextState.lastResult, analysisFinishedAt: nextState.analysisFinishedAt, history: nextState.history });
     return true;
   }
-  if (pathname === '/api/jobs' && req.method === 'GET') {
-    sendJson(res, 200, loadJobs());
-    return true;
-  }
+  if (pathname === '/api/jobs' && req.method === 'GET') { sendJson(res, 200, loadJobs()); return true; }
   return false;
 }
 
@@ -303,9 +274,7 @@ ensureDataFile();
 const server = http.createServer(async (req, res) => {
   const requestUrl = new URL(req.url, `http://${req.headers.host}`);
   const pathname = requestUrl.pathname;
-
   if (req.method === 'OPTIONS') { sendJson(res, 204, {}); return; }
-
   try {
     if (pathname.startsWith('/api/')) {
       const handled = await handleApi(req, res, pathname);
@@ -320,8 +289,6 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`CareerAI server running at http://localhost:${PORT}`);
-  if (GEMINI_API_KEY) console.log('Gemini AI: Đã bật');
-  else console.log('Gemini AI: Chưa có key — đặt biến môi trường GEMINI_API_KEY để bật');
-  if (API_SECRET) console.log('API auth: Đã bật (X-API-Key header)');
-  else console.log('API auth: Chưa đặt — đặt biến môi trường API_SECRET để bật');
+  console.log(`Gemini AI: ${GEMINI_API_KEY ? 'Đã bật ✅' : 'Chưa có key (set GEMINI_API_KEY trong .env)'}`);
+  console.log(`API auth:  ${API_SECRET ? 'Đã bật ✅' : 'Tắt (set API_SECRET trong .env để bật)'}`);
 });
