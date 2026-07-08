@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tải CV - CareerAI UEH</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="careerai-ueh-pixel.css" />
+</head>
+<body>
+  <section class="screen" id="upload">
+    <header class="topbar">
+      <div class="container nav-wrap">
+        <div class="brand"><div class="ueh-logo"><span class="stick"></span><span>UEH</span></div><div class="brand-meta"><div class="uni">TRƯỜNG ĐẠI HỌC KINH TẾ TP.HCM</div><div class="ai">CareerAI</div></div></div>
+        <nav class="nav"><a href="careerai-ueh-pixel.html">Trang chủ</a><a href="about.html">Giới thiệu</a><a class="active" href="jobs.html">Luồng</a><a href="contact.html">Hỗ trợ</a></nav>
+      </div>
+    </header>
+    <div class="container">
+      <h2 class="upload-title">Tải CV của bạn lên</h2>
+      <p class="selected-job">Nghề nghiệp đã chọn: <b id="selected-job-name">Marketing Manager</b></p>
+      <p class="selected-job" id="upload-message">Vui lòng chọn file CV để tiếp tục.</p>
+      <div class="upload-drop">
+        <div class="file">📄</div>
+        <button class="choose-btn" id="choose-file-btn">Chọn file</button>
+        <input id="cv-file-input" type="file" accept=".pdf,.doc,.docx" hidden />
+      </div>
+      <p class="selected-job" id="selected-file-name">Chưa chọn file CV</p>
+      <div class="stepper orange12">
+        <div class="step done"><div class="num">✓</div><div class="label">1. Chọn nghề</div></div>
+        <div class="step active"><div class="num">2</div><div class="label">2. Tải CV</div></div>
+        <div class="step"><div class="num">3</div><div class="label">3. Phân tích</div></div>
+        <div class="step"><div class="num">4</div><div class="label">4. Kết quả</div></div>
+      </div>
+      <div class="center-btn"><a class="next-btn" id="upload-next" href="analysis.html">Phân tích CV →</a></div>
+    </div>
+  </section>
+  <script src="careerai.js" defer></script>
+</body>
+</html>
