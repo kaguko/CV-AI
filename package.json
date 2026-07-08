@@ -1,0 +1,16 @@
+{
+  "name": "careerai-ueh",
+  "version": "1.0.0",
+  "description": "CareerAI UEH - Công cụ phân tích CV hướng nghệp được hỗ trợ bởi AI",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["cv", "ai", "career", "ueh", "resume-analyzer"],
+  "author": "Lê Quang Huy",
+  "license": "MIT"
+}
