@@ -6,15 +6,62 @@ const { URL } = require('url');
 const PORT = Number(process.env.PORT || 3000);
 const ROOT_DIR = __dirname;
 const DATA_FILE = path.join(ROOT_DIR, 'careerai-data.json');
+const JOBS_FILE = path.join(ROOT_DIR, 'jobs-data.json');
 
-const JOBS = {
-  marketing: { label: 'Marketing Manager', score: 78 },
-  finance: { label: 'Financial Analyst', score: 82 },
-  technology: { label: 'Software Engineer', score: 86 },
-  humanresources: { label: 'HR Specialist', score: 74 },
-  accounting: { label: 'Accountant', score: 79 },
-  logistics: { label: 'Logistics Coordinator', score: 76 }
-};
+// ─── Cấu hình bảo mật ────────────────────────────────────────────────────────
+// Thế ALLOWED_ORIGIN bằng domain thật khi deploy production
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'http://localhost:3000';
+// API key đơn giản — đặt biến môi trường API_SECRET khi chạy server
+// Ví dụ: API_SECRET=mysecret node server.js
+const API_SECRET = process.env.API_SECRET || '';
+
+// ─── Gemini AI ────────────────────────────────────────────────────────────────
+// Đặt biến môi trường GEMINI_API_KEY=<key của bạn> rồi chạy lại server
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+const GEMINI_MODEL = 'gemini-1.5-flash';
+
+async function analyzeWithGemini(cvText, jobLabel) {
+  if (!GEMINI_API_KEY) {
+    return null; // Fallback sang dữ liệu cố định nếu chưa có key
+  }
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+  const prompt = `Bạn là chuyên gia tuyển dụng. Hãy đọc nội dung CV sau và đánh giá mức độ phù hợp với vị trí "${jobLabel}" trên thang 0-100. Trả về JSON: {"score": <số>, "summary": "<nhận xét ngắn>"}
+
+CV:
+${cvText.slice(0, 3000)}`;
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const match = text.match(/\{[\s\S]*\}/);
+    return match ? JSON.parse(match[0]) : null;
+  } catch {
+    return null;
+  }
+}
+
+// ─── Load JOBS từ file JSON dùng chung ──────────────────────────────────────
+function loadJobs() {
+  try {
+    return JSON.parse(fs.readFileSync(JOBS_FILE, 'utf8'));
+  } catch {
+    // Fallback tối thiểu nếu file bị mất
+    return {
+      marketing: { label: 'Marketing Manager', score: 78 },
+      finance: { label: 'Financial Analyst', score: 82 },
+      technology: { label: 'Software Engineer', score: 86 },
+      humanresources: { label: 'HR Specialist', score: 74 },
+      accounting: { label: 'Accountant', score: 79 },
+      logistics: { label: 'Logistics Coordinator', score: 76 }
+    };
+  }
+}
 
 const VALID_CV_EXTENSIONS = new Set(['.pdf', '.doc', '.docx']);
 
@@ -31,14 +78,12 @@ function getDefaultState() {
 }
 
 function isValidJobKey(key) {
+  const JOBS = loadJobs();
   return Object.prototype.hasOwnProperty.call(JOBS, key);
 }
 
 function isValidCvFileName(fileName) {
-  if (typeof fileName !== 'string' || !fileName.trim()) {
-    return false;
-  }
-
+  if (typeof fileName !== 'string' || !fileName.trim()) return false;
   return VALID_CV_EXTENSIONS.has(path.extname(fileName).toLowerCase());
 }
 
@@ -48,12 +93,11 @@ function normalizeState(state) {
   const selectedFileName = isValidCvFileName(safeState.selectedFileName) ? safeState.selectedFileName : '';
   const lastResult = safeState.lastResult && typeof safeState.lastResult === 'object'
     ? {
-      ...safeState.lastResult,
-      jobKey: isValidJobKey(safeState.lastResult.jobKey) ? safeState.lastResult.jobKey : selectedJobKey,
-      fileName: isValidCvFileName(safeState.lastResult.fileName) ? safeState.lastResult.fileName : ''
-    }
+        ...safeState.lastResult,
+        jobKey: isValidJobKey(safeState.lastResult.jobKey) ? safeState.lastResult.jobKey : selectedJobKey,
+        fileName: isValidCvFileName(safeState.lastResult.fileName) ? safeState.lastResult.fileName : ''
+      }
     : null;
-
   return {
     ...safeState,
     selectedJobKey,
@@ -65,11 +109,8 @@ function normalizeState(state) {
 }
 
 function readJson(filePath, fallback) {
-  try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  } catch {
-    return fallback;
-  }
+  try { return JSON.parse(fs.readFileSync(filePath, 'utf8')); }
+  catch { return fallback; }
 }
 
 function writeJson(filePath, data) {
@@ -87,26 +128,26 @@ function saveState(state) {
 }
 
 function getJob(key) {
+  const JOBS = loadJobs();
   return JOBS[key] || JOBS.marketing;
 }
 
-function sendJson(res, statusCode, payload) {
-  res.writeHead(statusCode, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
+// ─── CORS headers ─────────────────────────────────────────────────────────────
+function getCorsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
     'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type'
-  });
+    'Access-Control-Allow-Headers': 'Content-Type,X-API-Key'
+  };
+}
+
+function sendJson(res, statusCode, payload) {
+  res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8', ...getCorsHeaders() });
   res.end(JSON.stringify(payload));
 }
 
 function sendText(res, statusCode, text, contentType) {
-  res.writeHead(statusCode, {
-    'Content-Type': `${contentType}; charset=utf-8`,
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type'
-  });
+  res.writeHead(statusCode, { 'Content-Type': `${contentType}; charset=utf-8`, ...getCorsHeaders() });
   res.end(text);
 }
 
@@ -114,15 +155,16 @@ function getContentType(filePath) {
   const ext = path.extname(filePath).toLowerCase();
   switch (ext) {
     case '.html': return 'text/html';
-    case '.css': return 'text/css';
-    case '.js': return 'application/javascript';
+    case '.css':  return 'text/css';
+    case '.js':   return 'application/javascript';
     case '.json': return 'application/json';
-    case '.svg': return 'image/svg+xml';
-    case '.png': return 'image/png';
+    case '.svg':  return 'image/svg+xml';
+    case '.png':  return 'image/png';
     case '.jpg':
     case '.jpeg': return 'image/jpeg';
-    case '.ico': return 'image/x-icon';
-    default: return 'application/octet-stream';
+    case '.pdf':  return 'application/pdf';
+    case '.ico':  return 'image/x-icon';
+    default:      return 'application/octet-stream';
   }
 }
 
@@ -131,100 +173,98 @@ function parseBody(req) {
     let body = '';
     req.on('data', (chunk) => {
       body += chunk;
-      if (body.length > 1_000_000) {
-        reject(new Error('Payload too large'));
-        req.destroy();
-      }
+      if (body.length > 1_000_000) { reject(new Error('Payload too large')); req.destroy(); }
     });
     req.on('end', () => {
-      if (!body) {
-        resolve({});
-        return;
-      }
-      try {
-        resolve(JSON.parse(body));
-      } catch (error) {
-        reject(error);
-      }
+      if (!body) { resolve({}); return; }
+      try { resolve(JSON.parse(body)); }
+      catch (error) { reject(error); }
     });
     req.on('error', reject);
   });
 }
 
+// ─── Kiểm tra API key (chỉ áp dụng khi API_SECRET được đặt) ───────────────────
+function isAuthorized(req) {
+  if (!API_SECRET) return true; // Bỏ qua nếu chưa cấu hình secret
+  const key = req.headers['x-api-key'];
+  return key === API_SECRET;
+}
+
 function ensureDataFile() {
-  if (!fs.existsSync(DATA_FILE)) {
-    saveState(getDefaultState());
-  }
+  if (!fs.existsSync(DATA_FILE)) saveState(getDefaultState());
 }
 
 function serveStatic(req, res, pathname) {
   const requestedPath = pathname === '/' ? '/index.html' : pathname;
   const filePath = path.normalize(path.join(ROOT_DIR, requestedPath));
-  if (!filePath.startsWith(ROOT_DIR)) {
-    sendText(res, 403, 'Forbidden', 'text/plain');
-    return;
-  }
+  if (!filePath.startsWith(ROOT_DIR)) { sendText(res, 403, 'Forbidden', 'text/plain'); return; }
 
   fs.readFile(filePath, (error, data) => {
     if (error) {
       const fallbackPath = path.join(ROOT_DIR, 'index.html');
       fs.readFile(fallbackPath, (fallbackError, fallbackData) => {
-        if (fallbackError) {
-          sendText(res, 404, 'Not Found', 'text/plain');
-          return;
-        }
+        if (fallbackError) { sendText(res, 404, 'Not Found', 'text/plain'); return; }
         sendText(res, 200, fallbackData.toString('utf8'), 'text/html');
       });
       return;
     }
-
-    res.writeHead(200, {
-      'Content-Type': getContentType(filePath),
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
-    });
+    res.writeHead(200, { 'Content-Type': getContentType(filePath), ...getCorsHeaders() });
     res.end(data);
   });
 }
 
-function analyzeState(statePatch) {
+async function analyzeState(statePatch) {
   const state = loadState();
+  const JOBS = loadJobs();
   const selectedJobKey = statePatch.selectedJobKey || state.selectedJobKey || 'marketing';
   const job = getJob(selectedJobKey);
   const analysisFinishedAt = Date.now();
+
+  // Cố gắng dùng Gemini nếu có key
+  let score = job.score;
+  let aiSummary = null;
+  const cvText = statePatch.cvText || '';
+  if (cvText && GEMINI_API_KEY) {
+    const aiResult = await analyzeWithGemini(cvText, job.label);
+    if (aiResult) {
+      score = Math.min(100, Math.max(0, Number(aiResult.score) || job.score));
+      aiSummary = aiResult.summary || null;
+    }
+  }
+
   const lastResult = {
     jobKey: selectedJobKey,
-    score: job.score,
+    score,
     jobLabel: job.label,
-    fileName: statePatch.selectedFileName || state.selectedFileName || ''
+    fileName: statePatch.selectedFileName || state.selectedFileName || '',
+    aiSummary
   };
   const historyEntry = {
     position: job.label,
-    score: `${job.score}/100`,
+    score: `${score}/100`,
     date: new Intl.DateTimeFormat('vi-VN').format(new Date(analysisFinishedAt))
   };
-
-  const nextState = {
-    ...state,
-    ...statePatch,
-    selectedJobKey,
-    analysisFinishedAt,
-    lastResult,
+  const nextState = normalizeState({
+    ...state, ...statePatch, selectedJobKey, analysisFinishedAt, lastResult,
     history: [historyEntry, ...state.history].slice(0, 10)
-  };
-
-  const normalizedNextState = normalizeState(nextState);
-  saveState(normalizedNextState);
-  return normalizedNextState;
+  });
+  saveState(nextState);
+  return nextState;
 }
 
 async function handleApi(req, res, pathname) {
+  // Kiểm tra auth cho các endpoint ghi dữ liệu
+  const writeMethods = ['POST', 'PUT', 'PATCH'];
+  if (writeMethods.includes(req.method) && !isAuthorized(req)) {
+    sendJson(res, 401, { error: 'Unauthorized. Provide X-API-Key header.' });
+    return true;
+  }
+
   if (pathname === '/api/state' && req.method === 'GET') {
     sendJson(res, 200, loadState());
     return true;
   }
-
   if (pathname === '/api/state' && (req.method === 'PUT' || req.method === 'PATCH')) {
     const patch = await parseBody(req);
     const nextState = normalizeState({ ...loadState(), ...patch });
@@ -232,22 +272,17 @@ async function handleApi(req, res, pathname) {
     sendJson(res, 200, nextState);
     return true;
   }
-
   if (pathname === '/api/messages' && req.method === 'POST') {
     const message = await parseBody(req);
     const state = loadState();
-    const nextState = {
-      ...state,
-      messages: [...state.messages, message].slice(0, 100)
-    };
+    const nextState = { ...state, messages: [...state.messages, message].slice(0, 100) };
     saveState(nextState);
     sendJson(res, 200, { ok: true, message });
     return true;
   }
-
   if (pathname === '/api/analyze' && req.method === 'POST') {
     const patch = await parseBody(req);
-    const nextState = analyzeState(patch);
+    const nextState = await analyzeState(patch);
     sendJson(res, 200, {
       ok: true,
       lastResult: nextState.lastResult,
@@ -256,12 +291,10 @@ async function handleApi(req, res, pathname) {
     });
     return true;
   }
-
   if (pathname === '/api/jobs' && req.method === 'GET') {
-    sendJson(res, 200, JOBS);
+    sendJson(res, 200, loadJobs());
     return true;
   }
-
   return false;
 }
 
@@ -271,20 +304,14 @@ const server = http.createServer(async (req, res) => {
   const requestUrl = new URL(req.url, `http://${req.headers.host}`);
   const pathname = requestUrl.pathname;
 
-  if (req.method === 'OPTIONS') {
-    sendJson(res, 204, {});
-    return;
-  }
+  if (req.method === 'OPTIONS') { sendJson(res, 204, {}); return; }
 
   try {
     if (pathname.startsWith('/api/')) {
       const handled = await handleApi(req, res, pathname);
-      if (!handled) {
-        sendJson(res, 404, { error: 'Not found' });
-      }
+      if (!handled) sendJson(res, 404, { error: 'Not found' });
       return;
     }
-
     serveStatic(req, res, pathname);
   } catch (error) {
     sendJson(res, 500, { error: error.message || 'Server error' });
@@ -293,4 +320,8 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`CareerAI server running at http://localhost:${PORT}`);
+  if (GEMINI_API_KEY) console.log('Gemini AI: Đã bật');
+  else console.log('Gemini AI: Chưa có key — đặt biến môi trường GEMINI_API_KEY để bật');
+  if (API_SECRET) console.log('API auth: Đã bật (X-API-Key header)');
+  else console.log('API auth: Chưa đặt — đặt biến môi trường API_SECRET để bật');
 });
