@@ -280,17 +280,24 @@ async function analyzeState(statePatch) {
   const selectedJobKey = statePatch.selectedJobKey || state.selectedJobKey || 'marketing';
   const job = getJob(selectedJobKey);
   const analysisFinishedAt = Date.now();
+
+  // Mặc định dùng điểm từ JOBS
   let score = job.score;
   let aiSummary = null;
-  let simulated = true;
 
-  const cvText = statePatch.cvText || '';
+  // Nếu có GEMINI_API_KEY thì coi là không mô phỏng
+  const hasRealAI = Boolean(GEMINI_API_KEY);
+  let simulated = !hasRealAI;
+
+  const cvText = (statePatch.cvText || '').trim();
+
+  // Khi có key + có cvText thì ưu tiên gọi Gemini
   if (cvText && GEMINI_API_KEY) {
     const aiResult = await analyzeWithGemini(cvText, job.label);
     if (aiResult) {
       score = Math.min(100, Math.max(0, Number(aiResult.score) || job.score));
       aiSummary = aiResult.summary || null;
-      simulated = false;
+      // Không đổi simulated nữa vì đã set theo hasRealAI ở trên
     }
   }
 
@@ -302,8 +309,22 @@ async function analyzeState(statePatch) {
     aiSummary,
     simulated
   };
-  const historyEntry = { position: job.label, score: `${score}/100`, date: new Intl.DateTimeFormat('vi-VN').format(new Date(analysisFinishedAt)) };
-  const nextState = normalizeState({ ...state, ...statePatch, selectedJobKey, analysisFinishedAt, lastResult, history: [historyEntry, ...state.history].slice(0, 10) });
+
+  const historyEntry = {
+    position: job.label,
+    score: `${score}/100`,
+    date: new Intl.DateTimeFormat('vi-VN').format(new Date(analysisFinishedAt))
+  };
+
+  const nextState = normalizeState({
+    ...state,
+    ...statePatch,
+    selectedJobKey,
+    analysisFinishedAt,
+    lastResult,
+    history: [historyEntry, ...state.history].slice(0, 10)
+  });
+
   saveState(nextState);
   return nextState;
 }
