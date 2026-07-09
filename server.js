@@ -238,18 +238,24 @@ async function analyzeState(statePatch) {
   const job = getJob(selectedJobKey);
   const analysisFinishedAt = Date.now();
 
-  let score = job.score;
+  let score = null;
   let aiSummary = null;
-  let simulated = true;
+  let simulated = false;
+  let errorMessage = null;
 
   const cvText = typeof statePatch.cvText === 'string' ? statePatch.cvText.trim() : '';
 
-  if (cvText && GEMINI_API_KEY) {
+  if (!GEMINI_API_KEY) {
+    errorMessage = 'Chưa cấu hình GEMINI_API_KEY nên không thể phân tích AI.';
+  } else if (!cvText) {
+    errorMessage = 'Không đọc được nội dung CV để gửi cho AI.';
+  } else {
     const aiResult = await analyzeWithGemini(cvText, job.label);
     if (aiResult) {
-      score = Math.min(100, Math.max(0, Number(aiResult.score) || job.score));
+      score = Math.min(100, Math.max(0, Number(aiResult.score) || 0));
       aiSummary = aiResult.summary || null;
-      simulated = false;
+    } else {
+      errorMessage = 'AI không trả kết quả hợp lệ. Vui lòng thử lại.';
     }
   }
 
@@ -259,13 +265,8 @@ async function analyzeState(statePatch) {
     jobLabel: job.label,
     fileName: statePatch.selectedFileName || state.selectedFileName || '',
     aiSummary,
-    simulated
-  };
-
-  const historyEntry = {
-    position: job.label,
-    score: `${score}/100`,
-    date: new Intl.DateTimeFormat('vi-VN').format(new Date(analysisFinishedAt))
+    simulated,
+    errorMessage
   };
 
   const nextState = normalizeState({
@@ -274,7 +275,13 @@ async function analyzeState(statePatch) {
     selectedJobKey,
     analysisFinishedAt,
     lastResult,
-    history: [historyEntry, ...state.history].slice(0, 10)
+    history: score !== null
+      ? [{
+          position: job.label,
+          score: `${score}/100`,
+          date: new Intl.DateTimeFormat('vi-VN').format(new Date(analysisFinishedAt))
+        }, ...state.history].slice(0, 10)
+      : state.history
   });
 
   saveState(nextState);
