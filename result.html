@@ -249,32 +249,37 @@
 
   <script src="careerai.js" defer></script>
   <script>
-    // Animate score ring sau khi careerai.js render xong
-    window.addEventListener('load', function () {
-      // Chờ initResultPage() điền score vào DOM
-      var tries = 0;
-      var poll = setInterval(function () {
-        var scoreEl = document.getElementById('score-number');
-        var score = scoreEl ? parseInt(scoreEl.textContent, 10) : NaN;
-        tries++;
-        if (!isNaN(score) && score > 0) {
-          clearInterval(poll);
-          var r = 52;
-          var circumference = 2 * Math.PI * r; // ≈ 326.7
-          var circle = document.getElementById('ring-circle');
-          if (circle) {
-            var low = score < 50;
-            if (low) circle.classList.add('orange');
-            var offset = circumference * (1 - score / 100);
-            // Trigger animation after a short delay
-            setTimeout(function () {
-              circle.style.strokeDashoffset = offset.toFixed(1);
-            }, 100);
-          }
-        }
-        if (tries > 40) clearInterval(poll);
-      }, 100);
-    });
+    (function () {
+      var circle = document.getElementById('ring-circle');
+      if (!circle) return;
+
+      function applyScoreRing(score) {
+        if (isNaN(score) || score < 0) return false;
+
+        var r = 52;
+        var circumference = 2 * Math.PI * r;
+        if (score < 50) circle.classList.add('orange');
+        else circle.classList.remove('orange');
+
+        var offset = circumference * (1 - Math.max(0, Math.min(100, score)) / 100);
+        circle.setAttribute('stroke-dashoffset', offset.toFixed(1));
+        circle.style.strokeDashoffset = offset.toFixed(1);
+        return true;
+      }
+
+      function handleRender(payload) {
+        if (!payload || typeof payload.score !== 'number') return;
+        applyScoreRing(payload.score);
+      }
+
+      if (window.__careeraiResultPayload) {
+        handleRender(window.__careeraiResultPayload);
+      }
+
+      window.addEventListener('careerai-result-rendered', function (event) {
+        handleRender(event.detail);
+      });
+    })();
   </script>
 </body>
 </html>

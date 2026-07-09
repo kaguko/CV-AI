@@ -126,10 +126,21 @@
     return new Intl.DateTimeFormat('vi-VN').format(date);
   }
 
+  function notifyResultRendered(payload) {
+    try {
+      window.__careeraiResultPayload = payload;
+      window.dispatchEvent(new CustomEvent('careerai-result-rendered', { detail: payload }));
+    } catch {}
+  }
+
   function readFileAsText(file) {
     return new Promise((resolve, reject) => {
       if (!file) {
         resolve('');
+        return;
+      }
+      if (!/\.txt$/i.test(file.name || '')) {
+        reject(new Error('Bản này chỉ hỗ trợ file .txt'));
         return;
       }
       const reader = new FileReader();
@@ -252,14 +263,18 @@
             : 'Không đọc được nội dung CV. Hệ thống có thể chạy mô phỏng.';
         }
         return nextState;
-      } catch {
+      } catch (error) {
         const nextState = setState({
           selectedFileName: file.name,
           cvText: ''
         });
 
         if (fileLabelNode) fileLabelNode.textContent = `Tệp đã chọn: ${file.name}`;
-        if (messageNode) messageNode.textContent = 'Không đọc được nội dung file. Bạn vẫn có thể chạy chế độ mô phỏng.';
+        if (messageNode) {
+          messageNode.textContent = error && error.message
+            ? `${error.message}. Hãy dùng file .txt có nội dung văn bản.`
+            : 'Không đọc được nội dung file. Bạn vẫn có thể chạy chế độ mô phỏng.';
+        }
         return nextState;
       }
     }
@@ -424,6 +439,7 @@
       if (noResultBlock) noResultBlock.style.display = '';
       if (resultContent) resultContent.style.display = 'none';
       if (jobLabelNode) jobLabelNode.textContent = 'Chưa có kết quả phân tích';
+      notifyResultRendered({ score: null, simulated: true });
       return;
     }
 
@@ -460,6 +476,7 @@
 
     // Recommendations — ưu tiên AI, fallback job.recommendations
     if (recommendList) {
+      recommendList.innerHTML = '';
       const recs = (result.recommendations && result.recommendations.length)
         ? result.recommendations
         : (job.recommendations || []);
@@ -479,6 +496,7 @@
 
     // Skills — ưu tiên AI skills trong lastResult, fallback job.skills
     if (skillsList) {
+      skillsList.innerHTML = '';
       const skills = (result.skills && result.skills.length)
         ? result.skills
         : (job.skills || []);
@@ -494,6 +512,11 @@
         skillsList.innerHTML = '<p class="muted">Không có dữ liệu kỹ năng</p>';
       }
     }
+
+    notifyResultRendered({
+      score: Number(result.score),
+      simulated: Boolean(result.simulated)
+    });
   }
 
   async function initRoadmapPage() {

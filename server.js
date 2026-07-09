@@ -30,6 +30,28 @@ const API_SECRET = process.env.API_SECRET || '';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
+function sanitizeGeminiResult(parsed) {
+  const rawScore = Number.parseInt(parsed?.score, 10);
+  const score = Number.isFinite(rawScore) ? Math.max(0, Math.min(100, rawScore)) : null;
+  const summary = typeof parsed?.summary === 'string' && parsed.summary.trim() ? parsed.summary.trim() : null;
+  const recommendations = Array.isArray(parsed?.recommendations)
+    ? parsed.recommendations.filter((item) => typeof item === 'string' && item.trim()).map((item) => item.trim()).slice(0, 5)
+    : [];
+  const skills = Array.isArray(parsed?.skills)
+    ? parsed.skills.map((skill) => {
+        if (!Array.isArray(skill) || skill.length < 3) return null;
+        const name = typeof skill[0] === 'string' ? skill[0].trim() : '';
+        if (!name) return null;
+        const rawPct = Number(skill[1]);
+        const pct = Number.isFinite(rawPct) ? Math.max(0, Math.min(100, Math.round(rawPct))) : 0;
+        const needsWork = typeof skill[2] === 'boolean' ? skill[2] : pct < 60;
+        return [name, pct, needsWork];
+      }).filter(Boolean).slice(0, 5)
+    : [];
+
+  return { score, summary, recommendations, skills };
+}
+
 // ─── Gemini: trả về score, summary, recommendations, skills ───
 async function analyzeWithGemini(cvText, jobLabel) {
   if (!GEMINI_API_KEY) { console.error('[Gemini] Missing GEMINI_API_KEY'); return null; }
@@ -79,23 +101,13 @@ ${String(cvText || '').slice(0, 6000)}`;
 
     try {
       const parsed = JSON.parse(text);
-      return {
-        score: parsed.score,
-        summary: parsed.summary || null,
-        recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
-        skills: Array.isArray(parsed.skills) ? parsed.skills : []
-      };
+      return sanitizeGeminiResult(parsed);
     } catch {
       const match = text.match(/\{[\s\S]*\}/);
       if (!match) { console.error('[Gemini] No JSON in response:', text); return null; }
       try {
         const parsed = JSON.parse(match[0]);
-        return {
-          score: parsed.score,
-          summary: parsed.summary || null,
-          recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
-          skills: Array.isArray(parsed.skills) ? parsed.skills : []
-        };
+        return sanitizeGeminiResult(parsed);
       } catch (e) { console.error('[Gemini] Fallback parse error:', e.message); return null; }
     }
   } catch (error) {
@@ -139,6 +151,16 @@ function isValidCvFileName(fileName) {
   return VALID_CV_EXTENSIONS.has(path.extname(fileName).toLowerCase());
 }
 
+function dedupeHistoryEntries(history) {
+  const seen = new Set();
+  return history.filter((entry) => {
+    const key = JSON.stringify([entry?.position || '', entry?.score || '', entry?.date || '']);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function normalizeState(state) {
   const safeState = { ...getDefaultState(), ...(state || {}) };
   const selectedJobKey = isValidJobKey(safeState.selectedJobKey) ? safeState.selectedJobKey : 'marketing';
@@ -152,7 +174,7 @@ function normalizeState(state) {
     : null;
   return {
     ...safeState, selectedJobKey, selectedFileName, lastResult,
-    history: Array.isArray(safeState.history) ? safeState.history : [],
+    history: dedupeHistoryEntries(Array.isArray(safeState.history) ? safeState.history : []),
     messages: Array.isArray(safeState.messages) ? safeState.messages : []
   };
 }
@@ -234,7 +256,9 @@ function serveStatic(req, res, pathname) {
 
 async function analyzeState(statePatch) {
   const state = loadState();
-  const selectedJobKey = statePatch.selectedJobKey || state.selectedJobKey || 'marketing';
+  const incomingPatch = statePatch && typeof statePatch === 'object' ? statePatch : {};
+  const { history: _ignoredHistory, ...safePatch } = incomingPatch;
+  const selectedJobKey = safePatch.selectedJobKey || state.selectedJobKey || 'marketing';
   const job = getJob(selectedJobKey);
   const analysisFinishedAt = Date.now();
 
@@ -244,7 +268,7 @@ async function analyzeState(statePatch) {
   let skills = [];
   let simulated = true;
 
-  const cvText = typeof statePatch.cvText === 'string' ? statePatch.cvText.trim() : '';
+  const cvText = typeof safePatch.cvText === 'string' ? safePatch.cvText.trim() : '';
 
   if (!cvText) {
     console.error('[Analyze] cvText rỗng — hãy upload file CV có nội dung text');
@@ -267,7 +291,7 @@ async function analyzeState(statePatch) {
     jobKey: selectedJobKey,
     score,
     jobLabel: job.label,
-    fileName: statePatch.selectedFileName || state.selectedFileName || '',
+    fileName: safePatch.selectedFileName || state.selectedFileName || '',
     aiSummary,
     recommendations,
     skills,
@@ -284,7 +308,7 @@ async function analyzeState(statePatch) {
 
   const nextState = normalizeState({
     ...state,
-    ...statePatch,
+    ...safePatch,
     selectedJobKey,
     analysisFinishedAt,
     lastResult,

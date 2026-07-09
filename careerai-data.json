@@ -8,8 +8,8 @@
       "date": "9/7/2026"
     },
     {
-      "position": "Marketing Manager",
-      "score": "78/100",
+      "position": "Software Engineer",
+      "score": "80/100",
       "date": "9/7/2026"
     },
     {
@@ -24,13 +24,13 @@
     "score": 88,
     "jobLabel": "Software Engineer",
     "fileName": "cv-real.txt",
-    "aiSummary": "CV thể hiện kinh nghiệm vững chắc 3 năm với React, Node.js, PostgreSQL cùng các công cụ DevOps như Docker, AWS. Ứng viên rất phù hợp với vị trí Software Engineer, đặc biệt là các vai trò full-stack hoặc backend.",
+    "aiSummary": "CV này thể hiện kinh nghiệm 3 năm vững chắc với các công nghệ chủ chốt như React, Node.js, PostgreSQL và kinh nghiệm thực tế với Docker, AWS, rất phù hợp với vị trí Software Engineer.",
     "recommendations": [
-      "Mô tả chi tiết hơn về các dự án đã thực hiện (ví dụ: quy mô, công nghệ cụ thể, kiến trúc) thay vì chỉ liệt kê tên.",
-      "Định lượng các kết quả đạt được (ví dụ: 'tối ưu hiệu năng API' nên được bổ sung bằng 'giảm thời gian phản hồi X%', 'tăng throughput Y%').",
-      "Bổ sung các kỹ năng mềm hoặc kinh nghiệm làm việc nhóm, giải quyết vấn đề để làm nổi bật hơn năng lực toàn diện.",
-      "Nếu có kinh nghiệm về thiết kế hệ thống, kiến trúc phần mềm hoặc các nguyên tắc SOLID, DRY, hãy thêm vào để thể hiện chiều sâu chuyên môn.",
-      "Đề cập kinh nghiệm với các quy trình kiểm thử (Unit Test, Integration Test) hoặc CI/CD pipelines để làm rõ hơn khả năng phát triển phần mềm toàn diện."
+      "Mô tả chi tiết hơn về các dự án đã thực hiện, đặc biệt là quy mô, công nghệ cụ thể và tác động định lượng (nếu có) của việc tối ưu hiệu năng API hoặc xây dựng dashboard.",
+      "Bổ sung kinh nghiệm về kiểm thử phần mềm (Unit Test, Integration Test) và các công cụ/framework liên quan để thể hiện quy trình phát triển toàn diện.",
+      "Liệt kê các công cụ và quy trình CI/CD đã sử dụng (nếu có) để làm nổi bật kinh nghiệm DevOps và tự động hóa.",
+      "Đề cập đến kinh nghiệm làm việc với các phương pháp phát triển phần mềm (ví dụ: Agile, Scrum) và cách ứng viên đóng góp vào quy trình nhóm.",
+      "Thêm các kỹ năng mềm quan trọng như giải quyết vấn đề, tư duy phản biện, làm việc nhóm và giao tiếp để hoàn thiện hồ sơ."
     ],
     "skills": [
       [
@@ -39,22 +39,22 @@
         false
       ],
       [
-        "Phát triển Frontend (React)",
+        "React",
         90,
         false
       ],
       [
-        "Phát triển Backend (Node.js)",
+        "Node.js",
         90,
         false
       ],
       [
-        "Quản lý Cơ sở dữ liệu (SQL/PostgreSQL)",
+        "SQL/Database",
         85,
         false
       ],
       [
-        "Công cụ DevOps (Docker, AWS, Git)",
+        "DevOps (Docker/AWS)",
         80,
         false
       ]
@@ -62,6 +62,6 @@
     "simulated": false
   },
   "startedAnalysisAt": null,
-  "analysisFinishedAt": 1783578782170,
+  "analysisFinishedAt": 1783579444293,
   "cvText": "Nguyen Van A\nSoftware Engineer\n3 nam kinh nghiem React, Node.js, PostgreSQL\nXay dung dashboard noi bo, toi uu hieu nang API, lam viec voi Docker va AWS\nKy nang: JavaScript, TypeScript, React, Node.js, SQL, Git"
 }
