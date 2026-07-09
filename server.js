@@ -240,8 +240,6 @@ async function analyzeState(statePatch) {
 
   let score = job.score;
   let aiSummary = null;
-  let aiRecommendations = null;  // null = dùng fallback từ jobs-data
-  let aiSkills = null;           // null = dùng fallback từ jobs-data
   let simulated = true;
 
   const cvText = typeof statePatch.cvText === 'string' ? statePatch.cvText.trim() : '';
@@ -251,10 +249,6 @@ async function analyzeState(statePatch) {
     if (aiResult) {
       score = Math.min(100, Math.max(0, Number(aiResult.score) || job.score));
       aiSummary = aiResult.summary || null;
-      aiRecommendations = aiResult.recommendations && aiResult.recommendations.length > 0
-        ? aiResult.recommendations : null;
-      aiSkills = aiResult.skills && aiResult.skills.length > 0
-        ? aiResult.skills : null;
       simulated = false;
     }
   }
@@ -265,8 +259,6 @@ async function analyzeState(statePatch) {
     jobLabel: job.label,
     fileName: statePatch.selectedFileName || state.selectedFileName || '',
     aiSummary,
-    aiRecommendations,  // mảng string từ Gemini, hoặc null
-    aiSkills,           // mảng [name, pct, isWeak] từ Gemini, hoặc null
     simulated
   };
 
@@ -277,7 +269,11 @@ async function analyzeState(statePatch) {
   };
 
   const nextState = normalizeState({
-    ...state, ...statePatch, selectedJobKey, analysisFinishedAt, lastResult,
+    ...state,
+    ...statePatch,
+    selectedJobKey,
+    analysisFinishedAt,
+    lastResult,
     history: [historyEntry, ...state.history].slice(0, 10)
   });
 
