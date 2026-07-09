@@ -45,11 +45,7 @@ async function analyzeWithGemini(cvText, jobLabel) {
   }
 
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
-  const prompt = `Bạn là chuyên gia tuyển dụng. Hãy đọc nội dung CV sau và đánh giá mức độ phù hợp với vị trí "${jobLabel}" trên thang 0-100. Trả về JSON hợp lệ duy nhất theo format:
-{"score": <so tu 0 den 100>, "summary": "<nhan xet ngan gon>"}
-
-CV:
-${String(cvText || '').slice(0, 6000)}`;
+  const prompt = `Bạn là chuyên gia tuyển dụng. Hãy đọc nội dung CV sau và đánh giá mức độ phù hợp với vị trí "${jobLabel}" trên thang 0-100. Trả về JSON hợp lệ duy nhất theo format:\n{"score": <so tu 0 den 100>, "summary": "<nhan xet ngan gon>"}\n\nCV:\n${String(cvText || '').slice(0, 6000)}`;
 
   try {
     const res = await fetch(endpoint, {
@@ -285,7 +281,7 @@ async function analyzeState(statePatch) {
   let aiSummary = null;
   let simulated = true;
 
-  const cvText = (statePatch.cvText || '').trim();
+  const cvText = typeof statePatch.cvText === 'string' ? statePatch.cvText.trim() : '';
 
   if (cvText && GEMINI_API_KEY) {
     const aiResult = await analyzeWithGemini(cvText, job.label);
@@ -374,6 +370,6 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`CareerAI server running at http://localhost:${PORT}`);
-  console.log(`Gemini AI: ${GEMINI_API_KEY ? 'Đã bật ✅' : 'Chưa có key — điểm mô phỏng (set GEMINI_API_KEY trong .env)'}`);
+  console.log(`Gemini AI: ${GEMINI_API_KEY ? 'Đã bật ✅' : 'Chưa có key (set GEMINI_API_KEY trong .env)'}`);
   console.log(`API auth:  ${API_SECRET ? 'Đã bật ✅' : 'Tắt (set API_SECRET trong .env để bật)'}`);
 });
