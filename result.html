@@ -8,52 +8,273 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="careerai-ueh-pixel.css" />
+  <style>
+    /* ── Badge trạng thái AI ── */
+    .ai-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      margin-bottom: 10px;
+    }
+    .ai-badge.real {
+      background: #e8f5e9;
+      color: #2e7d32;
+      border: 1px solid #a5d6a7;
+    }
+    .ai-badge.sim {
+      background: #fff3e0;
+      color: #bf360c;
+      border: 1px solid #ffcc80;
+    }
+    .ai-badge .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .ai-badge.real .dot { background: #43a047; }
+    .ai-badge.sim .dot  { background: #f4511e; }
+
+    /* ── Score ring ── */
+    .score-ring-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 20px 0 10px;
+    }
+    .score-ring {
+      position: relative;
+      width: 120px; height: 120px;
+    }
+    .score-ring svg { transform: rotate(-90deg); }
+    .score-ring .ring-bg  { fill: none; stroke: #e8e8e8; stroke-width: 10; }
+    .score-ring .ring-val {
+      fill: none;
+      stroke: var(--forest, #0a4d3c);
+      stroke-width: 10;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s ease;
+    }
+    .score-ring .ring-val.orange { stroke: var(--orange, #f5821f); }
+    .score-ring-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.9rem;
+      line-height: 1;
+      color: var(--forest, #0a4d3c);
+    }
+    .score-ring-label small {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #888;
+    }
+
+    /* ── AI Summary box ── */
+    .ai-summary-box {
+      background: #f7fbfa;
+      border-left: 3px solid #0a4d3c;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      color: #333;
+      line-height: 1.6;
+      margin-top: 10px;
+    }
+    .ai-summary-box.sim {
+      border-left-color: #f4511e;
+      background: #fff9f7;
+    }
+
+    /* ── Skill bars cải tiến ── */
+    .skill-row-v2 {
+      display: grid;
+      grid-template-columns: 140px 1fr 38px;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .skill-row-v2 .skill-name {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #333;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .skill-row-v2 .track-v2 {
+      background: #e8e8e8;
+      border-radius: 6px;
+      height: 10px;
+      overflow: hidden;
+    }
+    .skill-row-v2 .fill-v2 {
+      height: 100%;
+      border-radius: 6px;
+      background: var(--forest, #0a4d3c);
+      transition: width 0.8s ease;
+    }
+    .skill-row-v2 .fill-v2.orange { background: var(--orange, #f5821f); }
+    .skill-row-v2 .pct {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #555;
+      text-align: right;
+    }
+    .skill-row-v2 .pct.low { color: var(--orange, #f5821f); }
+
+    /* ── Kết quả chưa có ── */
+    .no-result-msg {
+      text-align: center;
+      padding: 40px 20px;
+      color: #888;
+    }
+    .no-result-msg .icon { font-size: 2.5rem; margin-bottom: 10px; }
+    .no-result-msg p { font-size: 0.95rem; margin-bottom: 16px; }
+
+    /* ── File tag ── */
+    .file-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f0f0f0;
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 0.78rem;
+      color: #555;
+      margin-top: 8px;
+    }
+  </style>
 </head>
 <body>
   <section class="screen" id="result">
     <header class="topbar">
       <div class="container nav-wrap">
-        <div class="brand"><div class="ueh-logo"><span class="stick"></span><span>UEH</span></div><div class="brand-meta"><div class="uni">TRƯỜNG ĐẠI HỌC KINH TẾ TP.HCM</div><div class="ai">CareerAI</div></div></div>
-        <nav class="nav"><a href="careerai-ueh-pixel.html">Trang chủ</a><a href="about.html">Giới thiệu</a><a class="active" href="jobs.html">Luồng</a><a href="contact.html">Hỗ trợ</a></nav>
+        <div class="brand">
+          <div class="ueh-logo"><span class="stick"></span><span>UEH</span></div>
+          <div class="brand-meta">
+            <div class="uni">TRƯỜNG ĐẠI HỌC KINH TẾ TP.HCM</div>
+            <div class="ai">CareerAI</div>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="careerai-ueh-pixel.html">Trang chủ</a>
+          <a href="about.html">Giới thiệu</a>
+          <a class="active" href="jobs.html">Luồng</a>
+          <a href="contact.html">Hỗ trợ</a>
+        </nav>
       </div>
     </header>
+
     <div class="container">
       <h2 class="result-title">Kết quả phân tích CV</h2>
-      <p class="result-sub">Nghề nghiệp: Marketing Manager</p>
-      <div class="result-grid-top">
-        <div class="score-card">
-          <div class="small">Điểm phù hợp</div>
-          <div class="score-big"><span class="accent">78</span>/100</div>
-          <div class="score-desc">CV của bạn khá phù hợp với vị trí này.<br>Cần bổ sung thêm kỹ năng digital marketing.</div>
-        </div>
-        <div class="improve-card">
-          <h3>Đề xuất cải thiện</h3>
-          <ul>
-            <li>✅ Bổ sung chứng chỉ Google Ads và Facebook Blueprint</li>
-            <li>✅ Thêm kinh nghiệm quản lý chiến dịch quảng cáo</li>
-            <li>✅ Nhấn mạnh kỹ năng phân tích dữ liệu (Google Analytics)</li>
-            <li class="warn">⚠️ Cần cải thiện phần mô tả thành tích bằng số liệu cụ thể</li>
-          </ul>
-        </div>
+      <p class="result-sub" id="result-job-label">Nghề nghiệp: —</p>
+
+      <!-- Không có kết quả -->
+      <div id="no-result-block" class="no-result-msg" style="display:none">
+        <div class="icon">📋</div>
+        <p>Bạn chưa chạy phân tích CV nào.<br>Hãy chọn nghề nghiệp và tải CV lên trước.</p>
+        <a class="action primary" href="jobs.html">Bắt đầu phân tích</a>
       </div>
-      <div class="result-grid-bottom">
-        <div class="skills-card">
-          <h3>Kỹ năng hiện tại vs Yêu cầu</h3>
-          <div class="skill-row"><span>Content Marketing</span><div class="track"><div class="fill" style="width:85%"></div></div></div>
-          <div class="skill-row"><span>SEO/SEM</span><div class="track"><div class="fill" style="width:60%"></div></div></div>
-          <div class="skill-row"><span>Data Analytics</span><div class="track"><div class="fill orange" style="width:40%"></div></div></div>
-          <div class="skill-row"><span>Team Leadership</span><div class="track"><div class="fill" style="width:75%"></div></div></div>
-          <div class="skill-row"><span>Digital Ads</span><div class="track"><div class="fill orange" style="width:30%"></div></div></div>
+
+      <!-- Có kết quả -->
+      <div id="result-content" style="display:none">
+        <div class="result-grid-top">
+
+          <!-- Score card -->
+          <div class="score-card">
+            <div class="small">Điểm phù hợp</div>
+            <div class="score-ring-wrap">
+              <div class="score-ring">
+                <svg viewBox="0 0 120 120" width="120" height="120">
+                  <circle class="ring-bg" cx="60" cy="60" r="52"/>
+                  <circle class="ring-val" id="ring-circle" cx="60" cy="60" r="52"
+                    stroke-dasharray="326.7"
+                    stroke-dashoffset="326.7"/>
+                </svg>
+                <div class="score-ring-label">
+                  <span id="score-number">0</span>
+                  <small>/100</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Badge AI / Mô phỏng -->
+            <div id="ai-badge-wrap"></div>
+
+            <!-- File CV -->
+            <div id="file-tag-wrap"></div>
+
+            <!-- AI Summary -->
+            <div id="ai-summary-box" class="ai-summary-box" style="display:none"></div>
+          </div>
+
+          <!-- Đề xuất cải thiện -->
+          <div class="improve-card">
+            <h3>Đề xuất cải thiện</h3>
+            <ul id="recommend-list">
+              <li class="muted">Đang tải...</li>
+            </ul>
+          </div>
         </div>
-        <div class="next-card">
-          <h3>Bước tiếp theo</h3>
-          <a class="action primary" href="roadmap.html">Xem lộ trình chi tiết</a>
-          <a class="action outline" href="dashboard.html">Tới dashboard</a>
-          <a class="action outline" href="upload.html">Phân tích lại với CV khác</a>
+
+        <div class="result-grid-bottom">
+          <!-- Kỹ năng -->
+          <div class="skills-card">
+            <h3>Kỹ năng hiện tại vs Yêu cầu</h3>
+            <div id="skills-list"></div>
+          </div>
+
+          <!-- Bước tiếp theo -->
+          <div class="next-card">
+            <h3>Bước tiếp theo</h3>
+            <a class="action primary" href="roadmap.html">Xem lộ trình chi tiết</a>
+            <a class="action outline" href="dashboard.html">Tới dashboard</a>
+            <a class="action outline" href="upload.html">Phân tích lại với CV khác</a>
+          </div>
         </div>
       </div>
     </div>
   </section>
+
   <script src="careerai.js" defer></script>
+  <script>
+    // Animate score ring sau khi careerai.js render xong
+    window.addEventListener('load', function () {
+      // Chờ initResultPage() điền score vào DOM
+      var tries = 0;
+      var poll = setInterval(function () {
+        var scoreEl = document.getElementById('score-number');
+        var score = scoreEl ? parseInt(scoreEl.textContent, 10) : NaN;
+        tries++;
+        if (!isNaN(score) && score > 0) {
+          clearInterval(poll);
+          var r = 52;
+          var circumference = 2 * Math.PI * r; // ≈ 326.7
+          var circle = document.getElementById('ring-circle');
+          if (circle) {
+            var low = score < 50;
+            if (low) circle.classList.add('orange');
+            var offset = circumference * (1 - score / 100);
+            // Trigger animation after a short delay
+            setTimeout(function () {
+              circle.style.strokeDashoffset = offset.toFixed(1);
+            }, 100);
+          }
+        }
+        if (tries > 40) clearInterval(poll);
+      }, 100);
+    });
+  </script>
 </body>
 </html>
