@@ -1,73 +1,9 @@
 {
   "selectedJobKey": "marketing",
-  "selectedFileName": "BapTap-2.pdf",
-  "history": [
-    {
-      "position": "Marketing Manager",
-      "score": "78/100",
-      "date": "9/7/2026"
-    },
-    {
-      "position": "Marketing Manager",
-      "score": "78/100",
-      "date": "9/7/2026"
-    },
-    {
-      "position": "Marketing Manager",
-      "score": "78/100",
-      "date": "9/7/2026"
-    },
-    {
-      "position": "Marketing Manager",
-      "score": "78/100",
-      "date": "8/7/2026"
-    },
-    {
-      "position": "Marketing Manager",
-      "score": "78/100",
-      "date": "8/7/2026"
-    },
-    {
-      "position": "Marketing Manager",
-      "score": "78/100",
-      "date": "8/7/2026"
-    },
-    {
-      "position": "Marketing Manager",
-      "score": "78/100",
-      "date": "8/7/2026"
-    },
-    {
-      "position": "Marketing Manager",
-      "score": "78/100",
-      "date": "8/7/2026"
-    },
-    {
-      "position": "Marketing Manager",
-      "score": "78/100",
-      "date": "8/7/2026"
-    },
-    {
-      "position": "Marketing Manager",
-      "score": "78/100",
-      "date": "8/7/2026"
-    }
-  ],
-  "messages": [
-    {
-      "email": "a@example.com",
-      "content": "Hello",
-      "name": "Nguyen Van A",
-      "date": "2026-07-08T23:38:19.3608566+07:00",
-      "subject": "Test"
-    }
-  ],
-  "lastResult": {
-    "jobKey": "marketing",
-    "score": 78,
-    "jobLabel": "Marketing Manager",
-    "fileName": "BapTap-2.pdf"
-  },
-  "startedAnalysisAt": 1783530160071,
-  "analysisFinishedAt": 1783530161264
+  "selectedFileName": "",
+  "history": [],
+  "messages": [],
+  "lastResult": null,
+  "startedAnalysisAt": null,
+  "analysisFinishedAt": null
 }
