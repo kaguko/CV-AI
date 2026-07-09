@@ -67,7 +67,13 @@
     try {
       const remoteState = await apiRequest('/api/state');
       if (remoteState) {
-        saveState({ ...getDefaultState(), ...remoteState });
+        // Giữ lại cvText từ localStorage — server không lưu cvText
+        const localState = loadState();
+        saveState({
+          ...getDefaultState(),
+          ...remoteState,
+          cvText: localState.cvText || ''
+        });
       }
     } catch {
       // Keep using local storage when the API is unavailable.
@@ -92,9 +98,11 @@
   }
 
   function syncPatchToServer(patch) {
+    // Không sync cvText lên server (nội dung CV chỉ lưu local)
+    const { cvText: _cvText, ...patchWithoutCvText } = patch;
     void apiRequest('/api/state', {
       method: 'PUT',
-      body: JSON.stringify(patch)
+      body: JSON.stringify(patchWithoutCvText)
     }).catch(() => {});
   }
 
