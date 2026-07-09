@@ -108,12 +108,12 @@ function loadJobs() {
   try { return JSON.parse(fs.readFileSync(JOBS_FILE, 'utf8')); }
   catch {
     return {
-      marketing:      { label: 'Marketing Manager',    score: 78 },
-      finance:        { label: 'Financial Analyst',     score: 82 },
-      technology:     { label: 'Software Engineer',     score: 86 },
-      humanresources: { label: 'HR Specialist',         score: 74 },
-      accounting:     { label: 'Accountant',            score: 79 },
-      logistics:      { label: 'Logistics Coordinator', score: 76 }
+      marketing:      { label: 'Marketing Manager' },
+      finance:        { label: 'Financial Analyst' },
+      technology:     { label: 'Software Engineer' },
+      humanresources: { label: 'HR Specialist' },
+      accounting:     { label: 'Accountant' },
+      logistics:      { label: 'Logistics Coordinator' }
     };
   }
 }
@@ -238,18 +238,32 @@ async function analyzeState(statePatch) {
   const job = getJob(selectedJobKey);
   const analysisFinishedAt = Date.now();
 
-  let score = job.score;
-  let aiSummary = null;
-  let simulated = true;
-
   const cvText = typeof statePatch.cvText === 'string' ? statePatch.cvText.trim() : '';
 
-  if (cvText && GEMINI_API_KEY) {
+  let score = null;
+  let aiSummary = null;
+  let recommendations = [];
+  let skills = [];
+  let simulated = true;
+  let errorMessage = null;
+
+  if (!cvText) {
+    errorMessage = 'cvText rỗng — hãy upload file CV có nội dung text (không phải PDF scan)';
+    console.warn('[Analyze]', errorMessage);
+  } else if (!GEMINI_API_KEY) {
+    errorMessage = 'Chưa cấu hình GEMINI_API_KEY trong .env';
+    console.warn('[Analyze]', errorMessage);
+  } else {
     const aiResult = await analyzeWithGemini(cvText, job.label);
     if (aiResult) {
-      score = Math.min(100, Math.max(0, Number(aiResult.score) || job.score));
+      score = Math.min(100, Math.max(0, Number(aiResult.score) || 0));
       aiSummary = aiResult.summary || null;
+      recommendations = aiResult.recommendations || [];
+      skills = aiResult.skills || [];
       simulated = false;
+    } else {
+      errorMessage = 'Gemini không trả về kết quả — kiểm tra API key hoặc quota';
+      console.error('[Analyze]', errorMessage);
     }
   }
 
@@ -259,14 +273,19 @@ async function analyzeState(statePatch) {
     jobLabel: job.label,
     fileName: statePatch.selectedFileName || state.selectedFileName || '',
     aiSummary,
-    simulated
+    recommendations,
+    skills,
+    simulated,
+    errorMessage
   };
 
-  const historyEntry = {
-    position: job.label,
-    score: `${score}/100`,
-    date: new Intl.DateTimeFormat('vi-VN').format(new Date(analysisFinishedAt))
-  };
+  const newHistory = score !== null
+    ? [{
+        position: job.label,
+        score: `${score}/100`,
+        date: new Intl.DateTimeFormat('vi-VN').format(new Date(analysisFinishedAt))
+      }, ...state.history].slice(0, 10)
+    : state.history;
 
   const nextState = normalizeState({
     ...state,
@@ -274,7 +293,7 @@ async function analyzeState(statePatch) {
     selectedJobKey,
     analysisFinishedAt,
     lastResult,
-    history: [historyEntry, ...state.history].slice(0, 10)
+    history: newHistory
   });
 
   saveState(nextState);

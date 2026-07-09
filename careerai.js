@@ -12,12 +12,12 @@
   let JOBS_CACHE = null;
 
   const JOBS_FALLBACK = {
-    marketing:      { label: 'Marketing Manager',     score: 78 },
-    finance:        { label: 'Financial Analyst',      score: 82 },
-    technology:     { label: 'Software Engineer',      score: 86 },
-    humanresources: { label: 'HR Specialist',          score: 74 },
-    accounting:     { label: 'Accountant',             score: 79 },
-    logistics:      { label: 'Logistics Coordinator',  score: 76 }
+    marketing:      { label: 'Marketing Manager' },
+    finance:        { label: 'Financial Analyst' },
+    technology:     { label: 'Software Engineer' },
+    humanresources: { label: 'HR Specialist' },
+    accounting:     { label: 'Accountant' },
+    logistics:      { label: 'Logistics Coordinator' }
   };
 
   async function fetchJobs() {
@@ -379,18 +379,17 @@
             window.setTimeout(() => window.location.replace('result.html'), 650);
           })
           .catch(() => {
-            const fallbackResult = {
-              jobKey: state.selectedJobKey,
-              score: job.score,
-              jobLabel: job.label,
-              fileName: state.selectedFileName,
-              aiSummary: null,
-              simulated: true
-            };
-
             setState({
               analysisFinishedAt: Date.now(),
-              lastResult: fallbackResult,
+              lastResult: {
+                jobKey: state.selectedJobKey,
+                score: null,
+                jobLabel: job.label,
+                fileName: state.selectedFileName,
+                aiSummary: null,
+                simulated: true,
+                errorMessage: 'Không kết nối được server'
+              },
               analysisLocked: false
             });
 
@@ -400,72 +399,99 @@
     }, 180);
   }
 
+  // ─── initResultPage: đồng bộ đúng với result.html mới ───
   async function initResultPage() {
-    const jobLabelNode = document.querySelector('.result-sub');
-    const scoreNode = document.querySelector('.score-big .accent');
-    const descriptionNode = document.querySelector('.score-desc');
-    const recommendationList = document.querySelector('.improve-card ul');
-    const skillRows = Array.from(document.querySelectorAll('.skills-card .skill-row'));
-    const nextLinks = document.querySelectorAll('.next-card .action');
-    if (!jobLabelNode && !scoreNode && !descriptionNode && !recommendationList && !skillRows.length) return;
+    const noResultBlock  = document.getElementById('no-result-block');
+    const resultContent  = document.getElementById('result-content');
+    const jobLabelNode   = document.getElementById('result-job-label');
+    const scoreNumber    = document.getElementById('score-number');
+    const aiBadgeWrap    = document.getElementById('ai-badge-wrap');
+    const fileTagWrap    = document.getElementById('file-tag-wrap');
+    const aiSummaryBox   = document.getElementById('ai-summary-box');
+    const recommendList  = document.getElementById('recommend-list');
+    const skillsList     = document.getElementById('skills-list');
 
-    const state = loadState();
-    const jobs = await fetchJobs();
-    const job = await getJobConfig(state.selectedJobKey, jobs);
+    // Chỉ chạy trên result.html
+    if (!noResultBlock && !resultContent) return;
+
+    const state  = loadState();
+    const jobs   = await fetchJobs();
     const result = state.lastResult || null;
+    const job    = await getJobConfig(result ? result.jobKey : state.selectedJobKey, jobs);
 
-    if (!result) {
+    // ── Không có kết quả ──
+    if (!result || result.score === null || result.score === undefined) {
+      if (noResultBlock) noResultBlock.style.display = '';
+      if (resultContent) resultContent.style.display = 'none';
       if (jobLabelNode) jobLabelNode.textContent = 'Chưa có kết quả phân tích';
-      if (scoreNode) scoreNode.textContent = '--';
-      if (descriptionNode) {
-        descriptionNode.innerHTML = `Bạn cần chạy phân tích trước khi xem kết quả.<br>Tệp CV: ${state.selectedFileName || 'Chưa có tệp'}`;
-      }
-    } else {
-      if (jobLabelNode) jobLabelNode.textContent = `Nghề nghiệp: ${result.jobLabel}`;
-      if (scoreNode) scoreNode.textContent = String(result.score);
+      return;
+    }
 
-      if (descriptionNode) {
-        const desc = result.aiSummary ? result.aiSummary : (job.description || '');
-        const badge = result.simulated
-          ? `<div class="sim-badge">Mô phỏng: chưa phân tích AI thực hoặc chưa có Gemini key</div>`
-          : `<div class="sim-badge real">AI đã phân tích nội dung CV</div>`;
+    // ── Có kết quả ──
+    if (noResultBlock) noResultBlock.style.display = 'none';
+    if (resultContent) resultContent.style.display = '';
 
-        descriptionNode.innerHTML = `${badge}${desc}<br>Tệp CV: ${state.selectedFileName || 'Chưa có tệp'}`;
+    if (jobLabelNode) jobLabelNode.textContent = `Nghề nghiệp: ${result.jobLabel || job.label}`;
+    if (scoreNumber)  scoreNumber.textContent  = String(result.score);
+
+    // Badge AI / Mô phỏng
+    if (aiBadgeWrap) {
+      const isReal = !result.simulated;
+      aiBadgeWrap.innerHTML = isReal
+        ? `<span class="ai-badge real"><span class="dot"></span>AI đã phân tích CV thực</span>`
+        : `<span class="ai-badge sim"><span class="dot"></span>Mô phỏng — chưa có Gemini key hoặc cvText rỗng</span>`;
+    }
+
+    // File tag
+    if (fileTagWrap && state.selectedFileName) {
+      fileTagWrap.innerHTML = `<span class="file-tag">📄 ${state.selectedFileName}</span>`;
+    }
+
+    // AI Summary
+    if (aiSummaryBox) {
+      if (result.aiSummary) {
+        aiSummaryBox.style.display = '';
+        aiSummaryBox.classList.toggle('sim', Boolean(result.simulated));
+        aiSummaryBox.textContent = result.aiSummary;
+      } else {
+        aiSummaryBox.style.display = 'none';
       }
     }
 
-    if (recommendationList && job.recommendations) {
-      recommendationList.innerHTML = job.recommendations.map((item) => `<li>✅ ${item}</li>`).join('');
-      const warning = document.createElement('li');
-      warning.className = 'warn';
-      warning.textContent = '⚠️ Chỉnh sửa CV theo mô tả công việc để tăng mức độ phù hợp';
-      recommendationList.appendChild(warning);
-    }
+    // Recommendations — ưu tiên AI, fallback job.recommendations
+    if (recommendList) {
+      const recs = (result.recommendations && result.recommendations.length)
+        ? result.recommendations
+        : (job.recommendations || []);
 
-    if (skillRows.length && job.skills) {
-      job.skills.forEach((skill, index) => {
-        const row = skillRows[index];
-        if (!row) return;
-        const label = row.querySelector('span');
-        const bar = row.querySelector('.fill');
-        if (label) label.textContent = skill[0];
-        if (bar) {
-          bar.style.width = `${skill[1]}%`;
-          bar.classList.toggle('orange', Boolean(skill[2]));
+      if (recs.length) {
+        recommendList.innerHTML = recs.map((item) => `<li>✅ ${item}</li>`).join('');
+        if (result.simulated) {
+          const warn = document.createElement('li');
+          warn.className = 'warn';
+          warn.textContent = '⚠️ Đây là đề xuất mẫu — hãy cung cấp GEMINI_API_KEY để có kết quả phân tích thực từ CV';
+          recommendList.appendChild(warn);
         }
-      });
+      } else {
+        recommendList.innerHTML = '<li class="muted">Không có đề xuất</li>';
+      }
     }
 
-    if (nextLinks && nextLinks[0]) {
-      nextLinks[0].textContent = 'Xem lộ trình chi tiết';
-      nextLinks[0].setAttribute('href', 'roadmap.html');
-      if (nextLinks[1]) {
-        nextLinks[1].textContent = 'Tới dashboard';
-        nextLinks[1].setAttribute('href', 'dashboard.html');
-      }
-      if (nextLinks[2]) {
-        nextLinks[2].textContent = 'Phân tích lại với CV khác';
-        nextLinks[2].setAttribute('href', 'upload.html');
+    // Skills — ưu tiên AI skills trong lastResult, fallback job.skills
+    if (skillsList) {
+      const skills = (result.skills && result.skills.length)
+        ? result.skills
+        : (job.skills || []);
+
+      if (skills.length) {
+        skillsList.innerHTML = skills.map(([name, pct, needsWork]) => `
+          <div class="skill-row-v2">
+            <span class="skill-name">${name}</span>
+            <div class="track-v2"><div class="fill-v2${needsWork ? ' orange' : ''}" style="width:${pct}%"></div></div>
+            <span class="pct${needsWork ? ' low' : ''}">${pct}%</span>
+          </div>`).join('');
+      } else {
+        skillsList.innerHTML = '<p class="muted">Không có dữ liệu kỹ năng</p>';
       }
     }
   }
@@ -498,7 +524,7 @@
         }
       });
     }
-    if (overallNode) overallNode.textContent = `${Math.round(job.score / 3)}% hoàn thành`;
+    if (overallNode && job.score) overallNode.textContent = `${Math.round(job.score / 3)}% hoàn thành`;
   }
 
   async function initDashboardPage() {
@@ -515,7 +541,7 @@
       const analyzedCount = Math.max(1, state.history.length + (state.lastResult ? 1 : 0));
       kpis[0].querySelector('strong').textContent = String(analyzedCount);
     }
-    if (kpis[1]) kpis[1].querySelector('strong .o').textContent = String((state.lastResult && state.lastResult.score) || job.score);
+    if (kpis[1]) kpis[1].querySelector('strong .o').textContent = String((state.lastResult && state.lastResult.score) || '--');
     if (kpis[2]) kpis[2].querySelector('strong').textContent = job.label.split(' ')[0];
     if (kpis[3]) {
       const completion = Math.min(100, Math.max(33, Math.round((state.history.length + 1) * 18)));
@@ -524,7 +550,7 @@
     }
 
     const rows = [
-      ...(state.lastResult ? [{
+      ...(state.lastResult && state.lastResult.score !== null ? [{
         position: state.lastResult.jobLabel,
         score: `${state.lastResult.score}/100`,
         date: formatDate(new Date(state.analysisFinishedAt || Date.now()))
