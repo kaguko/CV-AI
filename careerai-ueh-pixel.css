@@ -151,8 +151,9 @@ button,input,textarea{font:inherit}
 .quick .quick-btn:hover{background:rgba(255,255,255,.18);border-color:#fff;transform:translateY(-1px)}
 .quick .quick-btn.primary{background:#fff;color:var(--text);border:1px solid #fff}
 .quick .quick-btn.primary:hover{background:#f0fafa;border-color:#f0fafa}
-.next-btn[aria-disabled="true"],.action[aria-disabled="true"]{pointer-events:none;opacity:.55}
+.next-btn[aria-disabled="true"],.action[aria-disabled="true"],.quick .quick-btn[aria-disabled="true"]{pointer-events:none;opacity:.55;cursor:not-allowed}
 .sim-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;margin-bottom:10px;border-radius:999px;background:#fff3e8;color:var(--orange);border:1px solid rgba(245,130,31,.35);font-size:13px;font-weight:700}
+.sim-badge.real{background:#eaf8f8;color:var(--teal);border:1px solid rgba(7,93,91,.25)}
 .contact-title{font-size:57px;font-weight:300;color:var(--text);text-align:center;padding-top:18px}
 .contact-grid{display:grid;grid-template-columns:523px 1fr;gap:44px;margin-top:26px}
 .contact-info{background:var(--teal);border-radius:40px;color:#fff;min-height:417px;padding:28px 46px}

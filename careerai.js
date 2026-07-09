@@ -42,6 +42,10 @@
       selectedJobKey: 'marketing',
       selectedFileName: '',
       cvText: '',
+      lastResult: null,
+      startedAnalysisAt: null,
+      analysisFinishedAt: null,
+      analysisLocked: false,
       history: [],
       messages: []
     };
@@ -225,17 +229,18 @@
 
     async function updateFile(file) {
       if (!file) {
-        setState({ selectedFileName: '', cvText: '' });
+        const nextState = setState({ selectedFileName: '', cvText: '', analysisLocked: false });
         if (fileLabelNode) fileLabelNode.textContent = 'Chưa chọn file CV';
         if (messageNode) messageNode.textContent = 'Vui lòng chọn file CV để tiếp tục.';
-        return;
+        return nextState;
       }
       if (messageNode) messageNode.textContent = 'Đang đọc nội dung CV...';
       try {
         const cvText = await readFileAsText(file);
         const nextState = setState({
           selectedFileName: file.name,
-          cvText: cvText.trim()
+          cvText: cvText.trim(),
+          analysisLocked: false
         });
         if (fileLabelNode) fileLabelNode.textContent = `Tệp đã chọn: ${file.name}`;
         if (messageNode) {
@@ -243,10 +248,12 @@
             ? 'CV đã sẵn sàng để phân tích.'
             : 'Không đọc được nội dung CV. Hệ thống sẽ chạy mô phỏng.';
         }
+        return nextState;
       } catch {
-        setState({ selectedFileName: file.name, cvText: '' });
+        const nextState = setState({ selectedFileName: file.name, cvText: '', analysisLocked: false });
         if (fileLabelNode) fileLabelNode.textContent = `Tệp đã chọn: ${file.name}`;
         if (messageNode) messageNode.textContent = 'Không đọc được nội dung file. Vẫn có thể chạy mô phỏng.';
+        return nextState;
       }
     }
 
@@ -266,6 +273,7 @@
           if (messageNode) messageNode.textContent = 'Hãy chọn file CV trước khi phân tích.';
           return;
         }
+        nextButton.setAttribute('aria-disabled', 'true');
         nextButton.style.pointerEvents = 'none';
         nextButton.style.opacity = '0.6';
         setState({ startedAnalysisAt: Date.now(), analysisLocked: true });
@@ -297,12 +305,21 @@
       if (titleNode) titleNode.textContent = 'Bước phân tích đang chờ CV';
       if (subtitleNode) subtitleNode.textContent = 'Hãy quay lại bước tải CV để bắt đầu phân tích.';
       if (ring) ring.textContent = '0%';
-      if (nextButton) { nextButton.textContent = 'Quay lại tải CV →'; nextButton.setAttribute('href', 'upload.html'); }
+      if (nextButton) {
+        nextButton.textContent = 'Quay lại tải CV →';
+        nextButton.setAttribute('href', 'upload.html');
+        nextButton.removeAttribute('aria-disabled');
+        nextButton.style.pointerEvents = '';
+        nextButton.style.opacity = '';
+      }
       return;
     }
 
     // Khoá nút khi đang chạy phân tích
     if (nextButton) {
+      nextButton.textContent = 'Đang phân tích...';
+      nextButton.removeAttribute('href');
+      nextButton.setAttribute('aria-disabled', 'true');
       nextButton.style.pointerEvents = 'none';
       nextButton.style.opacity = '0.6';
     }
@@ -312,21 +329,23 @@
     const job = await getJobConfig(state.selectedJobKey, jobs);
     const ring = document.querySelector('.percent-ring');
     const list = document.querySelector('.analysis-list');
-    const startValue = 67;
+    const startValue = 12;
     const endValue = 100;
     let current = startValue;
 
+    if (ring) ring.textContent = `${startValue}%`;
+
     if (list) {
       list.innerHTML = `
-        <div>🟠 Kiểm tra kỹ năng chuyên môn</div>
+        <div>🟠 Đọc dữ liệu CV</div>
         <div>🟠 Đối chiếu với yêu cầu ngành</div>
-        <div class="warn">⏳ Phân tích kinh nghiệm làm việc</div>
-        <div class="muted">⚪ Đánh giá độ phù hợp</div>
+        <div class="warn">⏳ Phân tích mức độ phù hợp</div>
+        <div class="muted">⚪ Tạo kết quả đánh giá</div>
       `;
     }
 
     const timer = window.setInterval(() => {
-      current += 6;
+      current += 8;
       if (current > endValue) current = endValue;
       if (ring) ring.textContent = `${current}%`;
       if (current === endValue) {
@@ -349,6 +368,7 @@
               score: job.score,
               jobLabel: job.label,
               fileName: state.selectedFileName,
+              aiSummary: null,
               simulated: true
             };
             setState({ analysisFinishedAt: Date.now(), lastResult: fallbackResult, analysisLocked: false });
@@ -362,7 +382,7 @@
     const state = loadState();
     const jobs = await fetchJobs();
     const job = await getJobConfig(state.selectedJobKey, jobs);
-    const result = state.lastResult || { score: job.score, jobLabel: job.label, simulated: true };
+    const result = state.lastResult || null;
     const jobLabelNode = document.querySelector('.result-sub');
     const scoreNode = document.querySelector('.score-big .accent');
     const descriptionNode = document.querySelector('.score-desc');
@@ -370,14 +390,22 @@
     const skillRows = Array.from(document.querySelectorAll('.skills-card .skill-row'));
     const nextLinks = document.querySelectorAll('.next-card .action');
 
-    if (jobLabelNode) jobLabelNode.textContent = `Nghề nghiệp: ${result.jobLabel}`;
-    if (scoreNode) scoreNode.textContent = String(result.score);
-    if (descriptionNode) {
-      const desc = (result.aiSummary) ? result.aiSummary : (job.description || '');
-      const badge = result.simulated
-        ? '<div class="sim-badge">⚠️ Mô phỏng: chưa có Gemini AI key</div>'
-        : '';
-      descriptionNode.innerHTML = `${badge}${desc}<br>Tệp CV: ${state.selectedFileName || 'Chưa có tệp'}`;
+    if (!result) {
+      if (jobLabelNode) jobLabelNode.textContent = 'Chưa có kết quả phân tích';
+      if (scoreNode) scoreNode.textContent = '--';
+      if (descriptionNode) {
+        descriptionNode.innerHTML = `Bạn cần chạy phân tích trước khi xem kết quả.<br>Tệp CV: ${state.selectedFileName || 'Chưa có tệp'}`;
+      }
+    } else {
+      if (jobLabelNode) jobLabelNode.textContent = `Nghề nghiệp: ${result.jobLabel}`;
+      if (scoreNode) scoreNode.textContent = String(result.score);
+      if (descriptionNode) {
+        const desc = result.aiSummary ? result.aiSummary : (job.description || '');
+        const badge = result.simulated
+          ? '<div class="sim-badge">Mô phỏng: chưa phân tích AI thực hoặc chưa có Gemini key</div>'
+          : '<div class="sim-badge real">AI đã phân tích nội dung CV</div>';
+        descriptionNode.innerHTML = `${badge}${desc}<br>Tệp CV: ${state.selectedFileName || 'Chưa có tệp'}`;
+      }
     }
     if (recommendationList && job.recommendations) {
       recommendationList.innerHTML = job.recommendations.map((item) => `<li>✅ ${item}</li>`).join('');
@@ -398,8 +426,11 @@
     }
     if (nextLinks && nextLinks[0]) {
       nextLinks[0].textContent = 'Xem lộ trình chi tiết';
+      nextLinks[0].setAttribute('href', 'roadmap.html');
       if (nextLinks[1]) nextLinks[1].textContent = 'Tới dashboard';
+      if (nextLinks[1]) nextLinks[1].setAttribute('href', 'dashboard.html');
       if (nextLinks[2]) nextLinks[2].textContent = 'Phân tích lại với CV khác';
+      if (nextLinks[2]) nextLinks[2].setAttribute('href', 'upload.html');
     }
   }
 
