@@ -281,23 +281,18 @@ async function analyzeState(statePatch) {
   const job = getJob(selectedJobKey);
   const analysisFinishedAt = Date.now();
 
-  // Mặc định dùng điểm từ JOBS
   let score = job.score;
   let aiSummary = null;
-
-  // Nếu có GEMINI_API_KEY thì coi là không mô phỏng
-  const hasRealAI = Boolean(GEMINI_API_KEY);
-  let simulated = !hasRealAI;
+  let simulated = true;
 
   const cvText = (statePatch.cvText || '').trim();
 
-  // Khi có key + có cvText thì ưu tiên gọi Gemini
   if (cvText && GEMINI_API_KEY) {
     const aiResult = await analyzeWithGemini(cvText, job.label);
     if (aiResult) {
       score = Math.min(100, Math.max(0, Number(aiResult.score) || job.score));
       aiSummary = aiResult.summary || null;
-      // Không đổi simulated nữa vì đã set theo hasRealAI ở trên
+      simulated = false;
     }
   }
 
