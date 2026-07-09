@@ -11,10 +11,8 @@
     return 'http://localhost:3000';
   })();
 
-  // Cache JOBS sau khi fetch từ server — không hardcode nữa
   let JOBS_CACHE = null;
 
-  // Fallback tối thiểu nếu server không trả lời
   const JOBS_FALLBACK = {
     marketing:      { label: 'Marketing Manager',     score: 78 },
     finance:        { label: 'Financial Analyst',      score: 82 },
@@ -67,7 +65,6 @@
     try {
       const remoteState = await apiRequest('/api/state');
       if (remoteState) {
-        // Giữ lại cvText từ localStorage — server không lưu cvText
         const localState = loadState();
         saveState({
           ...getDefaultState(),
@@ -88,17 +85,12 @@
       },
       ...options
     });
-
-    if (!response.ok) {
-      throw new Error(`API request failed: ${response.status}`);
-    }
-
+    if (!response.ok) throw new Error(`API request failed: ${response.status}`);
     const text = await response.text();
     return text ? JSON.parse(text) : null;
   }
 
   function syncPatchToServer(patch) {
-    // Không sync cvText lên server (nội dung CV chỉ lưu local)
     const { cvText: _cvText, ...patchWithoutCvText } = patch;
     void apiRequest('/api/state', {
       method: 'PUT',
@@ -159,9 +151,7 @@
     const jobs = await fetchJobs();
     const job = await getJobConfig(state.selectedJobKey, jobs);
     const homeJob = document.querySelector('.job-select');
-    if (homeJob) {
-      homeJob.textContent = job.label;
-    }
+    if (homeJob) homeJob.textContent = job.label;
   }
 
   async function initJobsPage() {
@@ -245,11 +235,7 @@
       if (messageNode) messageNode.textContent = 'Đang đọc nội dung CV...';
       try {
         const cvText = await readFileAsText(file);
-        const nextState = setState({
-          selectedFileName: file.name,
-          cvText: cvText.trim(),
-          analysisLocked: false
-        });
+        const nextState = setState({ selectedFileName: file.name, cvText: cvText.trim(), analysisLocked: false });
         if (fileLabelNode) fileLabelNode.textContent = `Tệp đã chọn: ${file.name}`;
         if (messageNode) {
           messageNode.textContent = nextState.cvText
@@ -323,7 +309,6 @@
       return;
     }
 
-    // Khoá nút khi đang chạy phân tích
     if (nextButton) {
       nextButton.textContent = 'Đang phân tích...';
       nextButton.removeAttribute('href');
@@ -342,7 +327,6 @@
     let current = startValue;
 
     if (ring) ring.textContent = `${startValue}%`;
-
     if (list) {
       list.innerHTML = `
         <div>🟠 Đọc dữ liệu CV</div>
@@ -387,58 +371,97 @@
   }
 
   async function initResultPage() {
+    // Chỉ chạy trên result.html
+    if (!document.getElementById('result')) return;
+
     const state = loadState();
     const jobs = await fetchJobs();
     const job = await getJobConfig(state.selectedJobKey, jobs);
     const result = state.lastResult || null;
-    const jobLabelNode = document.querySelector('.result-sub');
-    const scoreNode = document.querySelector('.score-big .accent');
-    const descriptionNode = document.querySelector('.score-desc');
-    const recommendationList = document.querySelector('.improve-card ul');
-    const skillRows = Array.from(document.querySelectorAll('.skills-card .skill-row'));
-    const nextLinks = document.querySelectorAll('.next-card .action');
+
+    const jobLabelNode = document.getElementById('result-job-label');
+    const noResultBlock = document.getElementById('no-result-block');
+    const resultContent = document.getElementById('result-content');
+    const scoreNumber = document.getElementById('score-number');
+    const badgeWrap = document.getElementById('ai-badge-wrap');
+    const fileTagWrap = document.getElementById('file-tag-wrap');
+    const summaryBox = document.getElementById('ai-summary-box');
+    const recommendList = document.getElementById('recommend-list');
+    const skillsList = document.getElementById('skills-list');
 
     if (!result) {
+      // Không có kết quả
       if (jobLabelNode) jobLabelNode.textContent = 'Chưa có kết quả phân tích';
-      if (scoreNode) scoreNode.textContent = '--';
-      if (descriptionNode) {
-        descriptionNode.innerHTML = `Bạn cần chạy phân tích trước khi xem kết quả.<br>Tệp CV: ${state.selectedFileName || 'Chưa có tệp'}`;
+      if (noResultBlock) noResultBlock.style.display = '';
+      if (resultContent) resultContent.style.display = 'none';
+      return;
+    }
+
+    // Có kết quả — hiện content
+    if (jobLabelNode) jobLabelNode.textContent = `Nghề nghiệp: ${result.jobLabel}`;
+    if (noResultBlock) noResultBlock.style.display = 'none';
+    if (resultContent) resultContent.style.display = '';
+
+    // — Score number (ring animation do script inline)
+    if (scoreNumber) scoreNumber.textContent = String(result.score);
+
+    // — Badge AI / Mô phỏng
+    if (badgeWrap) {
+      if (result.simulated) {
+        badgeWrap.innerHTML = `
+          <div class="ai-badge sim">
+            <span class="dot"></span>
+            Mô phỏng — chưa kết nối AI
+          </div>`;
+      } else {
+        badgeWrap.innerHTML = `
+          <div class="ai-badge real">
+            <span class="dot"></span>
+            ✅ AI đã phân tích nội dung CV
+          </div>`;
       }
-    } else {
-      if (jobLabelNode) jobLabelNode.textContent = `Nghề nghiệp: ${result.jobLabel}`;
-      if (scoreNode) scoreNode.textContent = String(result.score);
-      if (descriptionNode) {
-        const desc = result.aiSummary ? result.aiSummary : (job.description || '');
-        const badge = result.simulated
-          ? '<div class="sim-badge">Mô phỏng: chưa phân tích AI thực hoặc chưa có Gemini key</div>'
-          : '<div class="sim-badge real">AI đã phân tích nội dung CV</div>';
-        descriptionNode.innerHTML = `${badge}${desc}<br>Tệp CV: ${state.selectedFileName || 'Chưa có tệp'}`;
+    }
+
+    // — File tag
+    if (fileTagWrap && state.selectedFileName) {
+      fileTagWrap.innerHTML = `
+        <div class="file-tag">
+          📎 ${state.selectedFileName}
+        </div>`;
+    }
+
+    // — AI Summary
+    if (summaryBox) {
+      const summary = result.aiSummary || job.description || '';
+      if (summary) {
+        summaryBox.style.display = '';
+        summaryBox.className = 'ai-summary-box' + (result.simulated ? ' sim' : '');
+        summaryBox.textContent = summary;
       }
     }
-    if (recommendationList && job.recommendations) {
-      recommendationList.innerHTML = job.recommendations.map((item) => `<li>✅ ${item}</li>`).join('');
-      const warning = document.createElement('li');
-      warning.className = 'warn';
-      warning.textContent = '⚠️ Chỉnh sửa CV theo mô tả công việc để tăng mức độ phù hợp';
-      recommendationList.appendChild(warning);
+
+    // — Đề xuất cải thiện
+    if (recommendList && job.recommendations) {
+      recommendList.innerHTML = job.recommendations
+        .map((item) => `<li>✅ ${item}</li>`)
+        .join('');
+      const warn = document.createElement('li');
+      warn.className = 'warn';
+      warn.innerHTML = '⚠️ Chỉnh sửa CV theo mô tả công việc để tăng mức độ phù hợp';
+      recommendList.appendChild(warn);
     }
-    if (skillRows.length && job.skills) {
-      job.skills.forEach((skill, index) => {
-        const row = skillRows[index];
-        if (!row) return;
-        const label = row.querySelector('span');
-        const bar = row.querySelector('.fill');
-        if (label) label.textContent = skill[0];
-        if (bar) { bar.style.width = `${skill[1]}%`; bar.classList.toggle('orange', Boolean(skill[2])); }
-      });
-    }
-    if (nextLinks && nextLinks[0]) {
-      nextLinks[0].textContent = 'Xem lộ trình chi tiết';
-      nextLinks[0].setAttribute('href', 'roadmap.html');
-      if (nextLinks[1]) nextLinks[1].textContent = 'Tới dashboard';
-      if (nextLinks[1]) nextLinks[1].setAttribute('href', 'dashboard.html');
-      if (nextLinks[2]) nextLinks[2].textContent = 'Phân tích lại với CV khác';
-      if (nextLinks[2]) nextLinks[2].setAttribute('href', 'upload.html');
+
+    // — Skill bars có label %
+    if (skillsList && job.skills) {
+      skillsList.innerHTML = job.skills.map(([name, pct, isWeak]) => `
+        <div class="skill-row-v2">
+          <span class="skill-name" title="${name}">${name}</span>
+          <div class="track-v2">
+            <div class="fill-v2${isWeak ? ' orange' : ''}" style="width:${pct}%"></div>
+          </div>
+          <span class="pct${isWeak ? ' low' : ''}">${pct}%</span>
+        </div>
+      `).join('');
     }
   }
 
@@ -541,7 +564,7 @@
         state.messages.push({ name, email, subject, content, date: new Date().toISOString() });
         saveState(state);
         syncMessageToServer({ name, email, subject, content, date: new Date().toISOString() });
-        showFeedback('Đã gửi tin nhắn. Đội ngũ sẽ phản hồi sớm.', false);
+        showFeedback('Đã gửi tin nhắn. Đội ngũ sẽ phản hồi sớn.', false);
         if (nameInput) nameInput.value = '';
         if (emailInput) emailInput.value = '';
         if (subjectInput) subjectInput.value = '';
@@ -552,7 +575,7 @@
 
   document.addEventListener('DOMContentLoaded', async () => {
     await hydrateStateFromServer();
-    await fetchJobs(); // Pre-load jobs vào cache
+    await fetchJobs();
     initHome();
     initJobsPage();
     initUploadPage();
