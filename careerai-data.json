@@ -1,9 +1,67 @@
 {
-  "selectedJobKey": "marketing",
-  "selectedFileName": "",
-  "history": [],
+  "selectedJobKey": "technology",
+  "selectedFileName": "cv-real.txt",
+  "history": [
+    {
+      "position": "Software Engineer",
+      "score": "88/100",
+      "date": "9/7/2026"
+    },
+    {
+      "position": "Marketing Manager",
+      "score": "78/100",
+      "date": "9/7/2026"
+    },
+    {
+      "position": "Marketing Manager",
+      "score": "78/100",
+      "date": "9/7/2026"
+    }
+  ],
   "messages": [],
-  "lastResult": null,
+  "lastResult": {
+    "jobKey": "technology",
+    "score": 88,
+    "jobLabel": "Software Engineer",
+    "fileName": "cv-real.txt",
+    "aiSummary": "CV thể hiện kinh nghiệm vững chắc 3 năm với React, Node.js, PostgreSQL cùng các công cụ DevOps như Docker, AWS. Ứng viên rất phù hợp với vị trí Software Engineer, đặc biệt là các vai trò full-stack hoặc backend.",
+    "recommendations": [
+      "Mô tả chi tiết hơn về các dự án đã thực hiện (ví dụ: quy mô, công nghệ cụ thể, kiến trúc) thay vì chỉ liệt kê tên.",
+      "Định lượng các kết quả đạt được (ví dụ: 'tối ưu hiệu năng API' nên được bổ sung bằng 'giảm thời gian phản hồi X%', 'tăng throughput Y%').",
+      "Bổ sung các kỹ năng mềm hoặc kinh nghiệm làm việc nhóm, giải quyết vấn đề để làm nổi bật hơn năng lực toàn diện.",
+      "Nếu có kinh nghiệm về thiết kế hệ thống, kiến trúc phần mềm hoặc các nguyên tắc SOLID, DRY, hãy thêm vào để thể hiện chiều sâu chuyên môn.",
+      "Đề cập kinh nghiệm với các quy trình kiểm thử (Unit Test, Integration Test) hoặc CI/CD pipelines để làm rõ hơn khả năng phát triển phần mềm toàn diện."
+    ],
+    "skills": [
+      [
+        "JavaScript/TypeScript",
+        90,
+        false
+      ],
+      [
+        "Phát triển Frontend (React)",
+        90,
+        false
+      ],
+      [
+        "Phát triển Backend (Node.js)",
+        90,
+        false
+      ],
+      [
+        "Quản lý Cơ sở dữ liệu (SQL/PostgreSQL)",
+        85,
+        false
+      ],
+      [
+        "Công cụ DevOps (Docker, AWS, Git)",
+        80,
+        false
+      ]
+    ],
+    "simulated": false
+  },
   "startedAnalysisAt": null,
-  "analysisFinishedAt": null
+  "analysisFinishedAt": 1783578782170,
+  "cvText": "Nguyen Van A\nSoftware Engineer\n3 nam kinh nghiem React, Node.js, PostgreSQL\nXay dung dashboard noi bo, toi uu hieu nang API, lam viec voi Docker va AWS\nKy nang: JavaScript, TypeScript, React, Node.js, SQL, Git"
 }

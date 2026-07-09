@@ -538,7 +538,7 @@
     const job = await getJobConfig(state.selectedJobKey, jobs);
 
     if (kpis[0]) {
-      const analyzedCount = Math.max(1, state.history.length + (state.lastResult ? 1 : 0));
+      const analyzedCount = state.history.length + (state.lastResult && state.lastResult.score !== null ? 1 : 0);
       kpis[0].querySelector('strong').textContent = String(analyzedCount);
     }
     if (kpis[1]) kpis[1].querySelector('strong .o').textContent = String((state.lastResult && state.lastResult.score) || '--');

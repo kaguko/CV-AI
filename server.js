@@ -28,7 +28,7 @@ const JOBS_FILE = path.join(ROOT_DIR, 'jobs-data.json');
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'http://localhost:3000';
 const API_SECRET = process.env.API_SECRET || '';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
 // ─── Gemini: trả về score, summary, recommendations, skills ───
 async function analyzeWithGemini(cvText, jobLabel) {
@@ -238,18 +238,28 @@ async function analyzeState(statePatch) {
   const job = getJob(selectedJobKey);
   const analysisFinishedAt = Date.now();
 
-  let score = job.score;
+  let score = null;
   let aiSummary = null;
+  let recommendations = [];
+  let skills = [];
   let simulated = true;
 
   const cvText = typeof statePatch.cvText === 'string' ? statePatch.cvText.trim() : '';
 
-  if (cvText && GEMINI_API_KEY) {
+  if (!cvText) {
+    console.error('[Analyze] cvText rỗng — hãy upload file CV có nội dung text');
+  } else if (!GEMINI_API_KEY) {
+    console.error('[Analyze] Không có GEMINI_API_KEY — trả về empty-state mô phỏng');
+  } else {
     const aiResult = await analyzeWithGemini(cvText, job.label);
     if (aiResult) {
       score = Math.min(100, Math.max(0, Number(aiResult.score) || 0));
       aiSummary = aiResult.summary || null;
+      recommendations = Array.isArray(aiResult.recommendations) ? aiResult.recommendations : [];
+      skills = Array.isArray(aiResult.skills) ? aiResult.skills : [];
       simulated = false;
+    } else {
+      console.error('[Analyze] Gemini không trả kết quả hợp lệ — trả về empty-state');
     }
   }
 
@@ -259,14 +269,18 @@ async function analyzeState(statePatch) {
     jobLabel: job.label,
     fileName: statePatch.selectedFileName || state.selectedFileName || '',
     aiSummary,
+    recommendations,
+    skills,
     simulated
   };
 
-  const historyEntry = {
-    position: job.label,
-    score: `${score}/100`,
-    date: new Intl.DateTimeFormat('vi-VN').format(new Date(analysisFinishedAt))
-  };
+  const history = score === null
+    ? state.history
+    : [{
+        position: job.label,
+        score: `${score}/100`,
+        date: new Intl.DateTimeFormat('vi-VN').format(new Date(analysisFinishedAt))
+      }, ...state.history].slice(0, 10);
 
   const nextState = normalizeState({
     ...state,
@@ -274,7 +288,7 @@ async function analyzeState(statePatch) {
     selectedJobKey,
     analysisFinishedAt,
     lastResult,
-    history: [historyEntry, ...state.history].slice(0, 10)
+    history
   });
 
   saveState(nextState);
