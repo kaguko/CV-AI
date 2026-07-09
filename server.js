@@ -36,7 +36,7 @@ const API_SECRET = process.env.API_SECRET || '';
 
 // ─── Gemini AI ───
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 
 async function analyzeWithGemini(cvText, jobLabel) {
   if (!GEMINI_API_KEY) {
@@ -131,7 +131,7 @@ function loadJobs() {
   }
 }
 
-const VALID_CV_EXTENSIONS = new Set(['.pdf', '.doc', '.docx']);
+const VALID_CV_EXTENSIONS = new Set(['.pdf', '.doc', '.docx', '.txt']);
 
 function getDefaultState() {
   return {
