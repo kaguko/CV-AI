@@ -3,7 +3,6 @@ const fs = require('fs');
 const path = require('path');
 const { URL } = require('url');
 
-// ─── Load biến môi trường từ file .env nếu có ───
 function loadEnv() {
   const envPath = path.join(__dirname, '.env');
   try {
@@ -15,13 +14,9 @@ function loadEnv() {
       if (eqIndex === -1) continue;
       const key = trimmed.slice(0, eqIndex).trim();
       const value = trimmed.slice(eqIndex + 1).trim();
-      if (key && !(key in process.env)) {
-        process.env[key] = value;
-      }
+      if (key && !(key in process.env)) process.env[key] = value;
     }
-  } catch {
-    // Không có .env — dùng biến môi trường hệ thống (cho Render/Vercel)
-  }
+  } catch { /* dùng biến môi trường hệ thống */ }
 }
 loadEnv();
 
@@ -30,96 +25,88 @@ const ROOT_DIR = __dirname;
 const DATA_FILE = path.join(ROOT_DIR, 'careerai-data.json');
 const JOBS_FILE = path.join(ROOT_DIR, 'jobs-data.json');
 
-// ─── Cấu hình bảo mật (lấy từ .env hoặc biến hệ thống) ───
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'http://localhost:3000';
 const API_SECRET = process.env.API_SECRET || '';
-
-// ─── Gemini AI ───
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 
+// ─── Gemini: trả về score, summary, recommendations, skills ───
 async function analyzeWithGemini(cvText, jobLabel) {
-  if (!GEMINI_API_KEY) {
-    console.error('[Gemini] Missing GEMINI_API_KEY');
-    return null;
-  }
+  if (!GEMINI_API_KEY) { console.error('[Gemini] Missing GEMINI_API_KEY'); return null; }
 
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
-  const prompt = `Bạn là chuyên gia tuyển dụng. Hãy đọc nội dung CV sau và đánh giá mức độ phù hợp với vị trí "${jobLabel}" trên thang 0-100. Trả về JSON hợp lệ duy nhất theo format:\n{"score": <so tu 0 den 100>, "summary": "<nhan xet ngan gon>"}\n\nCV:\n${String(cvText || '').slice(0, 6000)}`;
+  const prompt = `Bạn là chuyên gia tuyển dụng tại Việt Nam. Hãy phân tích CV sau và đánh giá mức độ phù hợp với vị trí "${jobLabel}".
+
+Trả về JSON hợp lệ duy nhất (không có markdown, không có text ngoài JSON) với format:
+{
+  "score": <số nguyên 0-100>,
+  "summary": "<nhận xét tổng quan 1-2 câu về CV và mức độ phù hợp vị trí>",
+  "recommendations": [
+    "<đề xuất cải thiện cụ thể dựa trên nội dung CV, tối đa 5 mục>"
+  ],
+  "skills": [
+    ["<tên kỹ năng quan trọng với vị trí>", <điểm 0-100 ứng viên hiện có>, <true nếu cần cải thiện (dưới 60)>]
+  ]
+}
+
+Lưu ý:
+- recommendations phải dựa vào nội dung CV thực tế, không nói chung chung
+- skills liệt kê 4-5 kỹ năng cốt lõi của vị trí ${jobLabel}
+- Trả lời hoàn toàn bằng tiếng Việt
+
+CV:
+${String(cvText || '').slice(0, 6000)}`;
 
   try {
     const res = await fetch(endpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': GEMINI_API_KEY
-      },
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
       body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: prompt }]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.2,
-          responseMimeType: 'application/json'
-        }
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.3, responseMimeType: 'application/json' }
       })
     });
 
     const rawText = await res.text();
-
-    if (!res.ok) {
-      console.error('[Gemini] HTTP error:', res.status, rawText);
-      return null;
-    }
+    if (!res.ok) { console.error('[Gemini] HTTP error:', res.status, rawText); return null; }
 
     let data;
-    try {
-      data = JSON.parse(rawText);
-    } catch (parseErr) {
-      console.error('[Gemini] Response JSON parse error:', parseErr.message, rawText);
-      return null;
-    }
+    try { data = JSON.parse(rawText); }
+    catch (e) { console.error('[Gemini] Parse error:', e.message); return null; }
 
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-    if (!text) {
-      console.error('[Gemini] Empty candidate text:', JSON.stringify(data));
-      return null;
-    }
+    if (!text) { console.error('[Gemini] Empty response'); return null; }
 
     try {
       const parsed = JSON.parse(text);
       return {
         score: parsed.score,
-        summary: parsed.summary
+        summary: parsed.summary || null,
+        recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
+        skills: Array.isArray(parsed.skills) ? parsed.skills : []
       };
-    } catch (parseErr) {
+    } catch {
       const match = text.match(/\{[\s\S]*\}/);
-      if (!match) {
-        console.error('[Gemini] No JSON object found in model text:', text);
-        return null;
-      }
-
+      if (!match) { console.error('[Gemini] No JSON in response:', text); return null; }
       try {
-        return JSON.parse(match[0]);
-      } catch (fallbackErr) {
-        console.error('[Gemini] Fallback JSON parse error:', fallbackErr.message, text);
-        return null;
-      }
+        const parsed = JSON.parse(match[0]);
+        return {
+          score: parsed.score,
+          summary: parsed.summary || null,
+          recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
+          skills: Array.isArray(parsed.skills) ? parsed.skills : []
+        };
+      } catch (e) { console.error('[Gemini] Fallback parse error:', e.message); return null; }
     }
   } catch (error) {
-    console.error('[Gemini] Network/runtime error:', error);
+    console.error('[Gemini] Network error:', error);
     return null;
   }
 }
 
-// ─── Load JOBS từ file JSON dùng chung ───
 function loadJobs() {
-  try {
-    return JSON.parse(fs.readFileSync(JOBS_FILE, 'utf8'));
-  } catch {
+  try { return JSON.parse(fs.readFileSync(JOBS_FILE, 'utf8')); }
+  catch {
     return {
       marketing:      { label: 'Marketing Manager',    score: 78 },
       finance:        { label: 'Financial Analyst',     score: 82 },
@@ -145,9 +132,7 @@ function getDefaultState() {
   };
 }
 
-function isValidJobKey(key) {
-  return Object.prototype.hasOwnProperty.call(loadJobs(), key);
-}
+function isValidJobKey(key) { return Object.prototype.hasOwnProperty.call(loadJobs(), key); }
 
 function isValidCvFileName(fileName) {
   if (typeof fileName !== 'string' || !fileName.trim()) return false;
@@ -177,22 +162,16 @@ function readJson(filePath, fallback) {
   catch { return fallback; }
 }
 
-function writeJson(filePath, data) {
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
-}
+function writeJson(filePath, data) { fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8'); }
 
 function loadState() {
-  const loadedState = normalizeState({ ...getDefaultState(), ...readJson(DATA_FILE, {}) });
-  saveState(loadedState);
-  return loadedState;
+  const loaded = normalizeState({ ...getDefaultState(), ...readJson(DATA_FILE, {}) });
+  saveState(loaded);
+  return loaded;
 }
 
 function saveState(state) { writeJson(DATA_FILE, normalizeState(state)); }
-
-function getJob(key) {
-  const JOBS = loadJobs();
-  return JOBS[key] || JOBS.marketing;
-}
+function getJob(key) { const J = loadJobs(); return J[key] || J.marketing; }
 
 function getCorsHeaders() {
   return {
@@ -214,33 +193,17 @@ function sendText(res, statusCode, text, contentType) {
 
 function getContentType(filePath) {
   const ext = path.extname(filePath).toLowerCase();
-  switch (ext) {
-    case '.html': return 'text/html';
-    case '.css':  return 'text/css';
-    case '.js':   return 'application/javascript';
-    case '.json': return 'application/json';
-    case '.svg':  return 'image/svg+xml';
-    case '.png':  return 'image/png';
-    case '.jpg':
-    case '.jpeg': return 'image/jpeg';
-    case '.pdf':  return 'application/pdf';
-    case '.ico':  return 'image/x-icon';
-    default:      return 'application/octet-stream';
-  }
+  const map = { '.html':'text/html', '.css':'text/css', '.js':'application/javascript',
+    '.json':'application/json', '.svg':'image/svg+xml', '.png':'image/png',
+    '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.pdf':'application/pdf', '.ico':'image/x-icon' };
+  return map[ext] || 'application/octet-stream';
 }
 
 function parseBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
-    req.on('data', (chunk) => {
-      body += chunk;
-      if (body.length > 1_000_000) { reject(new Error('Payload too large')); req.destroy(); }
-    });
-    req.on('end', () => {
-      if (!body) { resolve({}); return; }
-      try { resolve(JSON.parse(body)); }
-      catch (error) { reject(error); }
-    });
+    req.on('data', (chunk) => { body += chunk; if (body.length > 1_000_000) { reject(new Error('Payload too large')); req.destroy(); } });
+    req.on('end', () => { if (!body) { resolve({}); return; } try { resolve(JSON.parse(body)); } catch (e) { reject(e); } });
     req.on('error', reject);
   });
 }
@@ -250,9 +213,7 @@ function isAuthorized(req) {
   return req.headers['x-api-key'] === API_SECRET;
 }
 
-function ensureDataFile() {
-  if (!fs.existsSync(DATA_FILE)) saveState(getDefaultState());
-}
+function ensureDataFile() { if (!fs.existsSync(DATA_FILE)) saveState(getDefaultState()); }
 
 function serveStatic(req, res, pathname) {
   const requestedPath = pathname === '/' ? '/index.html' : pathname;
@@ -279,6 +240,8 @@ async function analyzeState(statePatch) {
 
   let score = job.score;
   let aiSummary = null;
+  let aiRecommendations = null;  // null = dùng fallback từ jobs-data
+  let aiSkills = null;           // null = dùng fallback từ jobs-data
   let simulated = true;
 
   const cvText = typeof statePatch.cvText === 'string' ? statePatch.cvText.trim() : '';
@@ -288,6 +251,10 @@ async function analyzeState(statePatch) {
     if (aiResult) {
       score = Math.min(100, Math.max(0, Number(aiResult.score) || job.score));
       aiSummary = aiResult.summary || null;
+      aiRecommendations = aiResult.recommendations && aiResult.recommendations.length > 0
+        ? aiResult.recommendations : null;
+      aiSkills = aiResult.skills && aiResult.skills.length > 0
+        ? aiResult.skills : null;
       simulated = false;
     }
   }
@@ -298,6 +265,8 @@ async function analyzeState(statePatch) {
     jobLabel: job.label,
     fileName: statePatch.selectedFileName || state.selectedFileName || '',
     aiSummary,
+    aiRecommendations,  // mảng string từ Gemini, hoặc null
+    aiSkills,           // mảng [name, pct, isWeak] từ Gemini, hoặc null
     simulated
   };
 
@@ -308,11 +277,7 @@ async function analyzeState(statePatch) {
   };
 
   const nextState = normalizeState({
-    ...state,
-    ...statePatch,
-    selectedJobKey,
-    analysisFinishedAt,
-    lastResult,
+    ...state, ...statePatch, selectedJobKey, analysisFinishedAt, lastResult,
     history: [historyEntry, ...state.history].slice(0, 10)
   });
 
