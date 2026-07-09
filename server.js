@@ -213,6 +213,28 @@ function sendText(res, statusCode, text, contentType) {
   res.end(text);
 }
 
+function getAuthMeta(req) {
+  const providedKey = req.headers['x-api-key'];
+  const origin = req.headers.origin || '';
+  const referer = req.headers.referer || '';
+  const host = String(req.headers.host || '').split(':')[0];
+  const isLocalRequest = (origin && isLocalhostUrl(origin)) || (referer && isLocalhostUrl(referer)) || ['localhost', '127.0.0.1', '::1'].includes(host);
+
+  if (!API_SECRET) {
+    return { enabled: false, mode: 'open', label: 'API auth: Tắt cho localhost' };
+  }
+
+  if (providedKey === API_SECRET) {
+    return { enabled: true, mode: 'token', label: 'API auth: Bật với X-API-Key' };
+  }
+
+  if (isLocalRequest) {
+    return { enabled: true, mode: 'local-bypass', label: 'API auth: Bật, nhưng localhost được phép' };
+  }
+
+  return { enabled: true, mode: 'token-required', label: 'API auth: Bật, cần X-API-Key' };
+}
+
 function getContentType(filePath) {
   const ext = path.extname(filePath).toLowerCase();
   const map = { '.html':'text/html', '.css':'text/css', '.js':'application/javascript',
@@ -230,9 +252,26 @@ function parseBody(req) {
   });
 }
 
+function isLocalhostUrl(value) {
+  if (!value || typeof value !== 'string') return false;
+  try {
+    const url = new URL(value);
+    return ['localhost', '127.0.0.1', '::1'].includes(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
 function isAuthorized(req) {
   if (!API_SECRET) return true;
-  return req.headers['x-api-key'] === API_SECRET;
+  const providedKey = req.headers['x-api-key'];
+  if (providedKey === API_SECRET) return true;
+
+  const origin = req.headers.origin || '';
+  const referer = req.headers.referer || '';
+  const host = String(req.headers.host || '').split(':')[0];
+  const isLocalRequest = (origin && isLocalhostUrl(origin)) || (referer && isLocalhostUrl(referer)) || ['localhost', '127.0.0.1', '::1'].includes(host);
+  return isLocalRequest;
 }
 
 function ensureDataFile() { if (!fs.existsSync(DATA_FILE)) saveState(getDefaultState()); }
@@ -325,6 +364,7 @@ async function handleApi(req, res, pathname) {
     return true;
   }
   if (pathname === '/api/state' && req.method === 'GET') { sendJson(res, 200, loadState()); return true; }
+  if (pathname === '/api/meta' && req.method === 'GET') { sendJson(res, 200, getAuthMeta(req)); return true; }
   if (pathname === '/api/state' && (req.method === 'PUT' || req.method === 'PATCH')) {
     const patch = await parseBody(req);
     const nextState = normalizeState({ ...loadState(), ...patch });

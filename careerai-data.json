@@ -1,7 +1,17 @@
 {
   "selectedJobKey": "technology",
-  "selectedFileName": "cv-real.txt",
+  "selectedFileName": "cv2.txt",
   "history": [
+    {
+      "position": "Software Engineer",
+      "score": "90/100",
+      "date": "9/7/2026"
+    },
+    {
+      "position": "Marketing Manager",
+      "score": "35/100",
+      "date": "9/7/2026"
+    },
     {
       "position": "Software Engineer",
       "score": "88/100",
@@ -21,47 +31,48 @@
   "messages": [],
   "lastResult": {
     "jobKey": "technology",
-    "score": 88,
+    "score": 90,
     "jobLabel": "Software Engineer",
-    "fileName": "cv-real.txt",
-    "aiSummary": "CV này thể hiện kinh nghiệm 3 năm vững chắc với các công nghệ chủ chốt như React, Node.js, PostgreSQL và kinh nghiệm thực tế với Docker, AWS, rất phù hợp với vị trí Software Engineer.",
+    "fileName": "cv2.txt",
+    "aiSummary": "Nguyễn Hoàng Nam thể hiện một CV xuất sắc với nền tảng kỹ thuật vững chắc, kinh nghiệm thực tế đáng kể từ các dự án và vị trí thực tập, cùng với khả năng học hỏi nhanh. Ứng viên rất phù hợp cho vị trí Software Engineer, đặc biệt là các vai trò yêu cầu kỹ năng Full-stack và tư duy giải thuật.",
     "recommendations": [
-      "Mô tả chi tiết hơn về các dự án đã thực hiện, đặc biệt là quy mô, công nghệ cụ thể và tác động định lượng (nếu có) của việc tối ưu hiệu năng API hoặc xây dựng dashboard.",
-      "Bổ sung kinh nghiệm về kiểm thử phần mềm (Unit Test, Integration Test) và các công cụ/framework liên quan để thể hiện quy trình phát triển toàn diện.",
-      "Liệt kê các công cụ và quy trình CI/CD đã sử dụng (nếu có) để làm nổi bật kinh nghiệm DevOps và tự động hóa.",
-      "Đề cập đến kinh nghiệm làm việc với các phương pháp phát triển phần mềm (ví dụ: Agile, Scrum) và cách ứng viên đóng góp vào quy trình nhóm.",
-      "Thêm các kỹ năng mềm quan trọng như giải quyết vấn đề, tư duy phản biện, làm việc nhóm và giao tiếp để hoàn thiện hồ sơ."
+      "Cập nhật đường dẫn GitHub và LinkedIn đầy đủ, có thể kèm theo các dự án nổi bật để nhà tuyển dụng dễ dàng đánh giá code.",
+      "Mô tả chi tiết hơn về kinh nghiệm CI/CD, ví dụ các công cụ cụ thể đã sử dụng ngoài GitHub Actions và mức độ tham gia vào việc xây dựng/duy trì pipeline.",
+      "Bổ sung kinh nghiệm về Unit Testing, Integration Testing hoặc các framework kiểm thử đã sử dụng trong quá trình phát triển.",
+      "Làm rõ hơn về \"2 năm kinh nghiệm thực chiến\" trong phần Tóm tắt Năng lực để phù hợp với mốc thời gian làm việc thực tế (Thực tập sinh, Trợ lý Nghiên cứu).",
+      "Nếu có, bổ sung kinh nghiệm về các công cụ giám sát (monitoring) và ghi log (logging) hệ thống."
     ],
     "skills": [
       [
-        "JavaScript/TypeScript",
+        "Cấu trúc dữ liệu & Giải thuật",
         90,
         false
       ],
       [
-        "React",
-        90,
-        false
-      ],
-      [
-        "Node.js",
-        90,
-        false
-      ],
-      [
-        "SQL/Database",
+        "Phát triển Backend (Node.js/Python)",
         85,
         false
       ],
       [
-        "DevOps (Docker/AWS)",
+        "Thiết kế hệ thống & Kiến trúc",
+        75,
+        false
+      ],
+      [
+        "DevOps & Cloud",
+        70,
+        true
+      ],
+      [
+        "Phát triển Frontend (React/Next.js)",
         80,
         false
       ]
     ],
     "simulated": false
   },
-  "startedAnalysisAt": null,
-  "analysisFinishedAt": 1783579444293,
-  "cvText": "Nguyen Van A\nSoftware Engineer\n3 nam kinh nghiem React, Node.js, PostgreSQL\nXay dung dashboard noi bo, toi uu hieu nang API, lam viec voi Docker va AWS\nKy nang: JavaScript, TypeScript, React, Node.js, SQL, Git"
+  "startedAnalysisAt": 1783580739852,
+  "analysisFinishedAt": 1783580742015,
+  "cvText": "NGUYỄN HOÀNG NAM\r\nNam · Sinh năm 2004 · TP. Hồ Chí Minh\r\nEmail: nam.nguyen.cs@gmail.com · Điện thoại: 0901 234 567\r\nGitHub: ://github.com · LinkedIn: ://linkedin.com\r\n\r\nMỤC TIÊU NGHỀ NGHIỆP\r\nKỹ sư Khoa học Máy tính xuất sắc với nền tảng toán học thuật toán vững chắc và tư duy thiết kế hệ thống tối ưu. Định hướng phát triển sâu vào mảng Kỹ nghệ Phần mềm (Software Engineering) và Thiết kế Hệ thống lớn (System Design). Mục tiêu trong 2 năm tới trở thành Full-stack Software Engineer đóng góp vào các sản phẩm quy mô hàng triệu người dùng toàn cầu.\r\n\r\nTÓM TẮT NĂNG LỰC\r\n- Thành thạo cấu trúc dữ liệu, giải thuật, tối ưu hóa độ phức tạp thuật toán (Time/Space Complexity).\r\n- Kinh nghiệm thực chiến 2 năm phát triển ứng dụng Web hiệu năng cao, xây dựng RESTful API và quản trị cơ sở dữ liệu lớn.\r\n- Tư duy tốt về thiết kế hệ thống phân tán, nguyên lý SOLID, thiết kế hướng đối tượng (OOP).\r\n- Khả năng nghiên cứu, tự học công nghệ mới nhanh và làm việc nhóm hiệu quả trong môi trường Agile/Scrum.\r\n\r\nKỸ NĂNG CHUYÊN MÔN\r\n- Ngôn ngữ lập trình: JavaScript, TypeScript, Python, C++, Java, SQL\r\n- Phát triển Frontend: React.js, Next.js, HTML5, CSS3, Tailwind CSS\r\n- Phát triển Backend: Node.js (Express), Python (FastAPI/Django), RESTful API\r\n- Cơ sở dữ liệu: PostgreSQL, MongoDB, Redis, MySQL\r\n- Công cụ & DevOps: Git, GitHub, Docker, AWS (S3, EC2), Linux, CI/CD basic\r\n- Phương pháp luận: Agile, Scrum, OOP, SOLID, DRY\r\n\r\nKINH NGHIỆM LÀM VIỆC\r\n1. Công ty Cổ phần Công nghệ TechNova Việt Nam (06/2025 - Hiện tại)\r\nVị trí: Thực tập sinh Kỹ sư Phần mềm (Software Engineer Intern)\r\n- Tham gia thiết kế và triển khai module xử lý dữ liệu lõi cho hệ thống quản lý nội bộ doanh nghiệp bằng Node.js và PostgreSQL.\r\n- Nghiên cứu và tối ưu hóa hệ thống truy vấn Database giúp giảm thời gian phản hồi API (Response Time) từ 350ms xuống còn 110ms.\r\n- Phối hợp xây dựng giao diện Dashboard quản trị real-time bằng React.js và Tailwind CSS, giúp tăng 25% trải nghiệm vận hành của người dùng nội bộ.\r\n- Áp dụng Docker để đóng gói ứng dụng, tối ưu quy trình phân phối code thông qua GitHub Actions CI/CD pipeline.\r\n\r\n2. Lab Nghiên cứu Khoa học Máy tính - Khoa CNTT (09/2024 - 05/2025)\r\nVị trí: Trợ lý Nghiên cứu & Phát triển Thuật toán\r\n- Nghiên cứu và hiện thực hóa các cấu trúc dữ liệu nâng cao nhằm tối ưu hóa bài toán phân tuyến giao thông đô thị mô phỏng.\r\n- Lập trình thuật toán tìm đường tối ưu trên đồ thị lớn bằng C++, giúp tăng tốc độ tính toán đồ thị lên 18% so với giải pháp cũ.\r\n\r\nDỰ ÁN CÁ NHÂN & ĐỒ ÁN\r\n1. Hệ thống TMĐT phân tán - E-Shop Distributed System (Đồ án môn học - 2025)\r\n- Công nghệ sử dụng: Next.js, FastAPI, PostgreSQL, Redis, Docker.\r\n- Mô tả: Xây dựng hệ thống thương mại điện tử mô phỏng kiến trúc microservices mini. Tích hợp Redis Cache giúp tăng tốc độ tải trang sản phẩm gấp 4 lần. Triển khai cơ chế lưu trữ hàng đợi tác vụ nền giúp xử lý đồng thời luồng thanh toán không bị nghẽn mạch.\r\n- Kết quả: Đồ án đạt điểm tuyệt đối 10/10 tại trường Đại học.\r\n\r\n2. Ứng dụng Quản lý Công việc Thông minh - TaskFlow App (02/2025)\r\n- Công nghệ sử dụng: React, Node.js, Express, MongoDB, Socket.io.\r\n- Mô tả: Xây dựng ứng dụng quản lý tiến độ công việc theo nhóm dạng bảng Kanban kéo thả. Sử dụng Socket.io để đồng bộ dữ liệu thời gian thực giữa các thành viên.\r\n\r\nHỌC VẤN\r\nTrường Đại học Kinh tế TP.HCM (UEH) - Khoa Công nghệ Thông tin Kinh doanh\r\nChuyên ngành: Khoa học Máy tính (Computer Science)\r\nNiên khóa: 2022 - 2026\r\nGPA hiện tại: 3.72 / 4.0 (Thuộc top 5% sinh viên xuất sắc của khóa)\r\n\r\nCHỨNG CHỈ & GIẢI THƯỞNG\r\n- Giải Khuyến khích Cuộc thi Lập trình Sinh viên Kỳ thi Olympic Tin học Quốc gia (2024).\r\n- Chứng chỉ AWS Certified Cloud Practitioner (2025).\r\n- Chứng chỉ tiếng Anh: IELTS 7.5 (Thành thạo kỹ năng đọc hiểu tài liệu kỹ thuật).",
+  "analysisLocked": false
 }

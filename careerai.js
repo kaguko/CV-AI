@@ -10,6 +10,7 @@
   })();
 
   let JOBS_CACHE = null;
+  let META_CACHE = null;
 
   const JOBS_FALLBACK = {
     marketing:      { label: 'Marketing Manager' },
@@ -30,6 +31,19 @@
     } catch {
       JOBS_CACHE = JOBS_FALLBACK;
       return JOBS_CACHE;
+    }
+  }
+
+  async function fetchRuntimeMeta() {
+    if (META_CACHE) return META_CACHE;
+    try {
+      const res = await fetch(`${API_BASE}/api/meta`);
+      if (!res.ok) throw new Error('meta fetch failed');
+      META_CACHE = await res.json();
+      return META_CACHE;
+    } catch {
+      META_CACHE = { enabled: false, mode: 'unknown', label: 'API auth: Không xác định' };
+      return META_CACHE;
     }
   }
 
@@ -133,6 +147,16 @@
     } catch {}
   }
 
+  function renderAuthStatus(node, meta) {
+    if (!node) return;
+    const status = meta || { enabled: false, mode: 'unknown', label: 'API auth: Không xác định' };
+    node.textContent = status.label || 'API auth: Không xác định';
+    node.className = 'auth-status';
+    if (status.mode === 'token' || status.mode === 'local-bypass') node.classList.add('ok');
+    else if (status.mode === 'token-required') node.classList.add('warn');
+    else node.classList.add('muted');
+  }
+
   function readFileAsText(file) {
     return new Promise((resolve, reject) => {
       if (!file) {
@@ -223,13 +247,16 @@
     const fileInput = document.getElementById('cv-file-input');
     const nextButton = document.getElementById('upload-next');
     const messageNode = document.getElementById('upload-message');
+    const authStatusNode = document.getElementById('auth-status');
     if (!selectedJobNode && !fileLabelNode && !chooseFileButton && !fileInput && !nextButton) return;
 
     const state = loadState();
     const jobs = await fetchJobs();
+    const meta = await fetchRuntimeMeta();
     const job = await getJobConfig(state.selectedJobKey, jobs);
 
     if (selectedJobNode) selectedJobNode.textContent = job.label;
+    renderAuthStatus(authStatusNode, meta);
     if (fileLabelNode) {
       fileLabelNode.textContent = state.selectedFileName ? `Tệp đã chọn: ${state.selectedFileName}` : 'Chưa chọn file CV';
     }
